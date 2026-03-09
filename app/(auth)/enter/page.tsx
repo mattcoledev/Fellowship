@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -41,7 +42,17 @@ export default function EnterPage() {
 
   return (
     <div className="min-h-screen bg-bg-base noise-bg flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-bg-surface border border-border rounded-xl p-8 text-center">
+      <div className="w-full max-w-sm bg-bg-surface border border-border rounded-xl overflow-hidden text-center">
+        <div className="w-full aspect-video relative">
+          <Image
+            src="/images/fellowship-hero.jpg"
+            alt="The Fellowship gathering at a coffee shop"
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+        <div className="p-8">
         <h1 className="font-serif text-2xl text-text-primary">
           The Fellowship
         </h1>
@@ -88,6 +99,7 @@ export default function EnterPage() {
             </Button>
           </form>
         )}
+        </div>
       </div>
     </div>
   )
