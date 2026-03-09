@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -8,6 +9,7 @@ export default function EnterPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isUnlocked, setIsUnlocked] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -15,7 +17,6 @@ export default function EnterPage() {
     setError(null)
     
     try {
-      console.log('[v0] Calling /api/verify-gate...')
       const res = await fetch('/api/verify-gate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -23,19 +24,16 @@ export default function EnterPage() {
         credentials: 'include',
       })
       
-      console.log('[v0] Response status:', res.status)
       const result = await res.json()
-      console.log('[v0] Result:', result)
       
       if (result.success) {
-        console.log('[v0] Success! Redirecting...')
-        window.location.href = '/login'
+        setIsUnlocked(true)
+        setIsLoading(false)
       } else {
         setError(result.error || 'Invalid password')
         setIsLoading(false)
       }
-    } catch (err) {
-      console.log('[v0] Error:', err)
+    } catch {
       setError('Something went wrong')
       setIsLoading(false)
     }
@@ -51,34 +49,45 @@ export default function EnterPage() {
           A private space for writing and reading.
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-          <div className="text-left">
-            <label htmlFor="password" className="block font-sans text-sm text-text-secondary mb-2">
-              Password
-            </label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              className="w-full bg-bg-raised border-border text-text-primary placeholder:text-text-muted font-mono"
-              disabled={isLoading}
-            />
+        {isUnlocked ? (
+          <div className="mt-8 space-y-4">
+            <p className="text-sm text-green-400 font-sans">Access granted.</p>
+            <Link href="/login">
+              <Button className="w-full bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium">
+                Continue to Login
+              </Button>
+            </Link>
           </div>
-          
-          {error && (
-            <p className="text-sm text-red-400 font-sans">{error}</p>
-          )}
-          
-          <Button 
-            type="submit"
-            disabled={isLoading || !password}
-            className="w-full bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
-          >
-            {isLoading ? 'Verifying...' : 'Enter'}
-          </Button>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            <div className="text-left">
+              <label htmlFor="password" className="block font-sans text-sm text-text-secondary mb-2">
+                Password
+              </label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                className="w-full bg-bg-raised border-border text-text-primary placeholder:text-text-muted font-mono"
+                disabled={isLoading}
+              />
+            </div>
+            
+            {error && (
+              <p className="text-sm text-red-400 font-sans">{error}</p>
+            )}
+            
+            <Button 
+              type="submit"
+              disabled={isLoading || !password}
+              className="w-full bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
+            >
+              {isLoading ? 'Verifying...' : 'Enter'}
+            </Button>
+          </form>
+        )}
       </div>
     </div>
   )
