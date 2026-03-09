@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +9,6 @@ export default function EnterPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [isUnlocked, setIsUnlocked] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,8 +26,7 @@ export default function EnterPage() {
       const result = await res.json()
       
       if (result.success) {
-        setIsUnlocked(true)
-        setIsLoading(false)
+        window.location.href = '/login'
       } else {
         setError(result.error || 'Invalid password')
         setIsLoading(false)
@@ -60,45 +57,34 @@ export default function EnterPage() {
           A private space for writing and reading.
         </p>
 
-        {isUnlocked ? (
-          <div className="mt-8 space-y-4">
-            <p className="text-sm text-green-400 font-sans">Access granted.</p>
-            <Link href="/login">
-              <Button className="w-full bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium">
-                Continue to Login
-              </Button>
-            </Link>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <div className="text-left">
+            <label htmlFor="password" className="block font-sans text-sm text-text-secondary mb-2">
+              Password
+            </label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password"
+              className="w-full bg-bg-raised border-border text-text-primary placeholder:text-text-muted font-mono"
+              disabled={isLoading}
+            />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-            <div className="text-left">
-              <label htmlFor="password" className="block font-sans text-sm text-text-secondary mb-2">
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                className="w-full bg-bg-raised border-border text-text-primary placeholder:text-text-muted font-mono"
-                disabled={isLoading}
-              />
-            </div>
-            
-            {error && (
-              <p className="text-sm text-red-400 font-sans">{error}</p>
-            )}
-            
-            <Button 
-              type="submit"
-              disabled={isLoading || !password}
-              className="w-full bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
-            >
-              {isLoading ? 'Verifying...' : 'Enter'}
-            </Button>
-          </form>
-        )}
+          
+          {error && (
+            <p className="text-sm text-red-400 font-sans">{error}</p>
+          )}
+          
+          <Button 
+            type="submit"
+            disabled={isLoading || !password}
+            className="w-full bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
+          >
+            {isLoading ? 'Verifying...' : 'Enter'}
+          </Button>
+        </form>
         </div>
       </div>
     </div>
