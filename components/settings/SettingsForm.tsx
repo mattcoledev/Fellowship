@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Profile, updateProfile } from '@/lib/db'
+import { Profile, updateProfile } from '@/lib/db-client'
 import { signOut } from '@/lib/auth-actions'
 
 interface SettingsFormProps {

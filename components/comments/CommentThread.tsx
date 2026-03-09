@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Comment, Profile, createComment } from '@/lib/db'
+import { Comment, Profile, createComment } from '@/lib/db-client'
 
 interface CommentThreadProps {
   comments: (Comment & { profiles: Profile })[]

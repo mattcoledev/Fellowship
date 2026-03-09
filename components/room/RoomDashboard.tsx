@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { PostCard } from '@/components/posts/PostCard'
-import { Post } from '@/lib/db'
+import { Post } from '@/lib/db-client'
 import { cn } from '@/lib/utils'
 
 type FilterTab = 'drafts' | 'private' | 'published'

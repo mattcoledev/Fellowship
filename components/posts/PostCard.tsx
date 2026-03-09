@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Post, Profile, deletePost, updatePost } from '@/lib/db'
+import { Post, Profile, deletePost, updatePost } from '@/lib/db-client'
 import { MoreHorizontal, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {

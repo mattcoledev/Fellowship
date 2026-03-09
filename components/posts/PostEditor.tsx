@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import { Post, createPost, updatePost } from '@/lib/db'
+import { Post, createPost, updatePost } from '@/lib/db-client'
 
 interface PostEditorProps {
   post?: Post

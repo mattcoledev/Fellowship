@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { PostCard } from '@/components/posts/PostCard'
-import { Post, Profile } from '@/lib/db'
+import { Post, Profile } from '@/lib/db-client'
 import { Search, ChevronDown } from 'lucide-react'
 import {
   DropdownMenu,
