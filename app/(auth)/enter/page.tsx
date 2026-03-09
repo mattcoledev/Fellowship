@@ -1,13 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { verifySitePassword } from './actions'
 
 export default function EnterPage() {
-  const router = useRouter()
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -20,8 +18,8 @@ export default function EnterPage() {
     const result = await verifySitePassword(password)
     
     if (result.success) {
-      router.push('/login')
-      router.refresh()
+      // Use window.location for full page reload to ensure cookie is read by middleware
+      window.location.href = '/login'
     } else {
       setError(result.error || 'Invalid password')
       setIsLoading(false)
