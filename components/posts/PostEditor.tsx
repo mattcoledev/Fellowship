@@ -24,17 +24,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import { PostType, PostStatus, Post } from '@/lib/types'
+import { Post, createPost, updatePost } from '@/lib/db'
 
 interface PostEditorProps {
   post?: Post
+  userId: string
 }
+
+type PostType = 'essay' | 'poem' | 'fiction' | 'reflection'
+type PostStatus = 'draft' | 'private' | 'published'
 
 const postTypes: { value: PostType; label: string }[] = [
   { value: 'essay', label: 'Essay' },
-  { value: 'story', label: 'Story' },
-  { value: 'idea', label: 'Idea' },
-  { value: 'note', label: 'Note' },
+  { value: 'poem', label: 'Poem' },
+  { value: 'fiction', label: 'Fiction' },
+  { value: 'reflection', label: 'Reflection' },
 ]
 
 const visibilityOptions: { value: PostStatus; label: string }[] = [
@@ -55,43 +59,84 @@ const toolbarButtons = [
   { icon: LinkIcon, label: 'Link' },
 ]
 
-export function PostEditor({ post }: PostEditorProps) {
+export function PostEditor({ post, userId }: PostEditorProps) {
   const router = useRouter()
+  const [postId, setPostId] = useState<string | null>(post?.id || null)
   const [title, setTitle] = useState(post?.title || '')
   const [content, setContent] = useState(post?.content || '')
-  const [postType, setPostType] = useState<PostType>(post?.type || 'essay')
+  const [postType, setPostType] = useState<PostType>(post?.post_type || 'essay')
   const [visibility, setVisibility] = useState<PostStatus>(post?.status || 'draft')
   const [tags, setTags] = useState<string[]>(post?.tags || [])
   const [tagInput, setTagInput] = useState('')
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved')
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('saved')
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
-  // Auto-save simulation
-  const autoSave = useCallback(() => {
-    if (title || content) {
-      setSaveStatus('saving')
-      setTimeout(() => {
-        setSaveStatus('saved')
-      }, 800)
-    }
-  }, [title, content])
+  // Calculate word count
+  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (saveStatus === 'unsaved') {
-        autoSave()
+  // Generate excerpt from content
+  const generateExcerpt = (text: string) => {
+    const plainText = text.replace(/[#*_~`]/g, '').trim()
+    return plainText.length > 200 ? plainText.substring(0, 200) + '...' : plainText
+  }
+
+  // Auto-save function
+  const savePost = useCallback(async () => {
+    if (!title.trim()) return
+
+    setSaveStatus('saving')
+    try {
+      const postData = {
+        title,
+        content,
+        excerpt: generateExcerpt(content),
+        post_type: postType,
+        status: visibility,
+        tags,
+        word_count: wordCount,
       }
+
+      if (postId) {
+        await updatePost(postId, postData)
+      } else {
+        const newPost = await createPost({
+          ...postData,
+          user_id: userId,
+        })
+        setPostId(newPost.id)
+      }
+      setSaveStatus('saved')
+      setHasUnsavedChanges(false)
+    } catch (error) {
+      console.error('Failed to save post:', error)
+      setSaveStatus('error')
+    }
+  }, [title, content, postType, visibility, tags, wordCount, postId, userId])
+
+  // Auto-save with debounce
+  useEffect(() => {
+    if (!hasUnsavedChanges) return
+
+    const timer = setTimeout(() => {
+      savePost()
     }, 2000)
+
     return () => clearTimeout(timer)
-  }, [title, content, saveStatus, autoSave])
+  }, [hasUnsavedChanges, savePost])
+
+  const markUnsaved = () => {
+    setSaveStatus('unsaved')
+    setHasUnsavedChanges(true)
+  }
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value)
-    setSaveStatus('unsaved')
+    markUnsaved()
   }
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value)
-    setSaveStatus('unsaved')
+    markUnsaved()
   }
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -101,24 +146,47 @@ export function PostEditor({ post }: PostEditorProps) {
         setTags([...tags, tagInput.trim().toLowerCase()])
       }
       setTagInput('')
-      setSaveStatus('unsaved')
+      markUnsaved()
     }
   }
 
   const removeTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove))
-    setSaveStatus('unsaved')
+    markUnsaved()
   }
 
-  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0
+  const handlePublish = async () => {
+    if (!title.trim()) {
+      alert('Please add a title before publishing')
+      return
+    }
 
-  const handlePublish = () => {
-    // Simulate publish
     setSaveStatus('saving')
-    setTimeout(() => {
-      setSaveStatus('saved')
+    try {
+      const postData = {
+        title,
+        content,
+        excerpt: generateExcerpt(content),
+        post_type: postType,
+        status: visibility,
+        tags,
+        word_count: wordCount,
+      }
+
+      if (postId) {
+        await updatePost(postId, postData)
+      } else {
+        await createPost({
+          ...postData,
+          user_id: userId,
+        })
+      }
       router.push('/room')
-    }, 500)
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to publish:', error)
+      setSaveStatus('error')
+    }
   }
 
   return (
@@ -142,6 +210,7 @@ export function PostEditor({ post }: PostEditorProps) {
             {saveStatus === 'saving' && 'Saving...'}
             {saveStatus === 'saved' && 'Saved'}
             {saveStatus === 'unsaved' && 'Unsaved changes'}
+            {saveStatus === 'error' && 'Failed to save'}
           </span>
 
           <div className="flex items-center gap-3">
@@ -162,7 +231,10 @@ export function PostEditor({ post }: PostEditorProps) {
                 {visibilityOptions.map((option) => (
                   <DropdownMenuItem 
                     key={option.value}
-                    onClick={() => setVisibility(option.value)}
+                    onClick={() => {
+                      setVisibility(option.value)
+                      markUnsaved()
+                    }}
                     className="font-sans text-sm text-text-primary hover:bg-bg-raised cursor-pointer"
                   >
                     {option.label}
@@ -173,9 +245,10 @@ export function PostEditor({ post }: PostEditorProps) {
 
             <Button
               onClick={handlePublish}
+              disabled={saveStatus === 'saving'}
               className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium text-sm"
             >
-              Publish
+              Save
             </Button>
           </div>
         </div>
@@ -199,7 +272,7 @@ export function PostEditor({ post }: PostEditorProps) {
               key={type.value}
               onClick={() => {
                 setPostType(type.value)
-                setSaveStatus('unsaved')
+                markUnsaved()
               }}
               className={cn(
                 "font-sans text-sm transition-colors",

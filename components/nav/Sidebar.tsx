@@ -13,24 +13,28 @@ import {
   X
 } from 'lucide-react'
 import { useState } from 'react'
+import { signOut } from '@/lib/auth-actions'
+
+interface SidebarProps {
+  username?: string
+}
 
 const navItems = [
   { href: '/room', label: 'Your Room', icon: PenLine },
   { href: '/common', label: 'The Common Room', icon: Users },
 ]
 
-const secondaryItems = [
-  { href: '/author/matt', label: 'Your Profile', icon: User },
-]
-
-const bottomItems = [
-  { href: '/settings', label: 'Settings', icon: Settings, ghost: true },
-  { href: '/enter', label: 'Sign Out', icon: LogOut, ghost: true, muted: true },
-]
-
-export function Sidebar() {
+export function Sidebar({ username }: SidebarProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const secondaryItems = [
+    { href: `/author/${username || 'profile'}`, label: 'Your Profile', icon: User },
+  ]
+
+  const handleSignOut = async () => {
+    await signOut()
+  }
 
   return (
     <>
@@ -120,27 +124,26 @@ export function Sidebar() {
 
         {/* Bottom items */}
         <div className="p-4 space-y-1">
-          {bottomItems.map((item) => {
-            const isActive = pathname === item.href
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  isActive 
-                    ? "bg-accent-subtle text-accent-blue" 
-                    : item.muted
-                      ? "text-text-muted hover:text-text-primary hover:bg-bg-raised"
-                      : "text-text-secondary hover:text-text-primary hover:bg-bg-raised"
-                )}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </Link>
-            )
-          })}
+          <Link
+            href="/settings"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+              pathname === '/settings' 
+                ? "bg-accent-subtle text-accent-blue" 
+                : "text-text-secondary hover:text-text-primary hover:bg-bg-raised"
+            )}
+          >
+            <Settings className="w-4 h-4" />
+            Settings
+          </Link>
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-text-muted hover:text-text-primary hover:bg-bg-raised"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
         </div>
       </aside>
     </>

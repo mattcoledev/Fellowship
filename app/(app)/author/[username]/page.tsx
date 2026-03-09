@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getUserByUsername, getPostsByAuthor, currentUser } from '@/lib/mock-data'
+import { getProfileByUsername, getUserPublishedPosts } from '@/lib/db'
+import { createClient } from '@/lib/supabase/server'
 import { PostCard } from '@/components/posts/PostCard'
 import { Button } from '@/components/ui/button'
 
@@ -10,14 +11,22 @@ interface AuthorProfilePageProps {
 
 export default async function AuthorProfilePage({ params }: AuthorProfilePageProps) {
   const { username } = await params
-  const user = getUserByUsername(username)
-
-  if (!user) {
+  const supabase = await createClient()
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  
+  let profile
+  try {
+    profile = await getProfileByUsername(username)
+  } catch {
     notFound()
   }
 
-  const posts = getPostsByAuthor(user.id).filter(post => post.status === 'published')
-  const isOwnProfile = user.id === currentUser.id
+  if (!profile) {
+    notFound()
+  }
+
+  const posts = await getUserPublishedPosts(profile.id)
+  const isOwnProfile = currentUser?.id === profile.id
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
@@ -37,19 +46,19 @@ export default async function AuthorProfilePage({ params }: AuthorProfilePagePro
         <div className="flex items-start gap-4">
           {/* Avatar */}
           <div className="w-16 h-16 rounded-full bg-accent-subtle text-accent-blue flex items-center justify-center text-xl font-medium flex-shrink-0">
-            {user.displayName.charAt(0).toUpperCase()}
+            {(profile.display_name || profile.username).charAt(0).toUpperCase()}
           </div>
 
           <div>
             {/* Name */}
             <h1 className="font-serif text-2xl text-text-primary">
-              {user.displayName}
+              {profile.display_name || profile.username}
             </h1>
 
             {/* Bio */}
-            {user.bio && (
+            {profile.bio && (
               <p className="mt-2 font-body text-base text-text-secondary italic">
-                {user.bio}
+                {profile.bio}
               </p>
             )}
 
@@ -64,7 +73,7 @@ export default async function AuthorProfilePage({ params }: AuthorProfilePagePro
       {/* Posts section */}
       <div className="mt-8">
         <h2 className="font-sans text-sm text-text-muted uppercase tracking-wide mb-4">
-          Posts by {user.displayName}
+          Posts by {profile.display_name || profile.username}
         </h2>
 
         {posts.length > 0 ? (
@@ -72,9 +81,8 @@ export default async function AuthorProfilePage({ params }: AuthorProfilePagePro
             {posts.map((post) => (
               <PostCard 
                 key={post.id} 
-                post={post} 
+                post={{ ...post, profiles: profile }} 
                 variant="feed"
-                authorName={user.displayName}
               />
             ))}
           </div>

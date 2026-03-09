@@ -1,6 +1,7 @@
+import { redirect, notFound } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { getPostById } from '@/lib/db'
 import { PostEditor } from '@/components/posts/PostEditor'
-import { getPostById } from '@/lib/mock-data'
-import { notFound } from 'next/navigation'
 
 interface EditPostPageProps {
   params: Promise<{ id: string }>
@@ -8,11 +9,23 @@ interface EditPostPageProps {
 
 export default async function EditPostPage({ params }: EditPostPageProps) {
   const { id } = await params
-  const post = getPostById(id)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!post) {
-    notFound()
+  if (!user) {
+    redirect('/login')
   }
 
-  return <PostEditor post={post} />
+  try {
+    const post = await getPostById(id)
+    
+    // Check if user owns this post
+    if (post.user_id !== user.id) {
+      redirect('/room')
+    }
+
+    return <PostEditor post={post} userId={user.id} />
+  } catch {
+    notFound()
+  }
 }

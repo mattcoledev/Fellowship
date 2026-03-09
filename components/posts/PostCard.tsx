@@ -1,8 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Post, PostType, PostStatus } from '@/lib/types'
-import { formatRelativeDate } from '@/lib/mock-data'
+import { Post, Profile, deletePost, updatePost } from '@/lib/db'
 import { MoreHorizontal, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,30 +11,69 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 interface PostCardProps {
-  post: Post
+  post: Post & { profiles?: Profile }
   variant?: 'dashboard' | 'feed'
-  authorName?: string
+  commentCount?: number
 }
 
-const typeLabels: Record<PostType, string> = {
+const typeLabels: Record<string, string> = {
   essay: 'Essay',
-  story: 'Story',
-  idea: 'Idea',
-  note: 'Note',
+  poem: 'Poem',
+  fiction: 'Fiction',
+  reflection: 'Reflection',
 }
 
-const statusConfig: Record<PostStatus, { label: string; dotColor: string }> = {
+const statusConfig: Record<string, { label: string; dotColor: string }> = {
   draft: { label: 'Draft', dotColor: 'bg-yellow-500' },
   private: { label: 'Private', dotColor: 'bg-orange-500' },
   published: { label: 'Published', dotColor: 'bg-green-500' },
 }
 
-export function PostCard({ post, variant = 'dashboard', authorName }: PostCardProps) {
+function formatRelativeDate(dateString: string): string {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+  
+  if (diffInSeconds < 60) return 'just now'
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
+  
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+export function PostCard({ post, variant = 'dashboard', commentCount = 0 }: PostCardProps) {
+  const router = useRouter()
+  const [isDeleting, setIsDeleting] = useState(false)
   const status = statusConfig[post.status]
 
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this post?')) return
+    setIsDeleting(true)
+    try {
+      await deletePost(post.id)
+      router.refresh()
+    } catch {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleStatusChange = async (newStatus: 'draft' | 'private' | 'published') => {
+    try {
+      await updatePost(post.id, { status: newStatus })
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to update status:', error)
+    }
+  }
+
   if (variant === 'feed') {
+    const authorName = post.profiles?.display_name || post.profiles?.username || 'Anonymous'
+    
     return (
       <Link href={`/common/${post.slug}`}>
         <article className="bg-bg-surface border border-border rounded-lg p-6 hover:bg-bg-raised transition-colors cursor-pointer">
@@ -43,19 +81,19 @@ export function PostCard({ post, variant = 'dashboard', authorName }: PostCardPr
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-accent-subtle text-accent-blue flex items-center justify-center text-sm font-medium">
-                {authorName?.charAt(0).toUpperCase()}
+                {authorName.charAt(0).toUpperCase()}
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-sans text-sm font-medium text-text-primary">
                   {authorName}
                 </span>
                 <span className="text-xs text-text-muted">
-                  {formatRelativeDate(post.createdAt)}
+                  {formatRelativeDate(post.published_at || post.created_at)}
                 </span>
               </div>
             </div>
             <span className="bg-accent-subtle text-accent-blue text-xs font-medium px-2 py-0.5 rounded">
-              {typeLabels[post.type]}
+              {typeLabels[post.post_type] || post.post_type}
             </span>
           </div>
 
@@ -74,7 +112,7 @@ export function PostCard({ post, variant = 'dashboard', authorName }: PostCardPr
           {/* Footer: tags + comments */}
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {post.tags.map((tag) => (
+              {post.tags?.map((tag) => (
                 <span 
                   key={tag}
                   className="bg-accent-subtle text-accent-blue text-xs font-medium px-2 py-0.5 rounded"
@@ -83,10 +121,10 @@ export function PostCard({ post, variant = 'dashboard', authorName }: PostCardPr
                 </span>
               ))}
             </div>
-            {post.commentCount > 0 && (
+            {commentCount > 0 && (
               <div className="flex items-center gap-1 text-xs text-text-muted">
                 <MessageCircle className="w-3.5 h-3.5" />
-                <span>{post.commentCount}</span>
+                <span>{commentCount}</span>
               </div>
             )}
           </div>
@@ -109,7 +147,7 @@ export function PostCard({ post, variant = 'dashboard', authorName }: PostCardPr
           <div className="mt-2 flex items-center gap-3 flex-wrap">
             {/* Type badge */}
             <span className="bg-accent-subtle text-accent-blue text-xs font-medium px-2 py-0.5 rounded">
-              {typeLabels[post.type]}
+              {typeLabels[post.post_type] || post.post_type}
             </span>
 
             {/* Status */}
@@ -122,7 +160,7 @@ export function PostCard({ post, variant = 'dashboard', authorName }: PostCardPr
 
             {/* Last edited */}
             <span className="font-sans text-xs text-text-muted">
-              Last edited {formatRelativeDate(post.updatedAt)}
+              Last edited {formatRelativeDate(post.updated_at)}
             </span>
           </div>
         </div>
@@ -146,6 +184,7 @@ export function PostCard({ post, variant = 'dashboard', authorName }: PostCardPr
                 variant="ghost"
                 size="sm"
                 className="text-text-secondary hover:text-text-primary hover:bg-bg-raised"
+                disabled={isDeleting}
               >
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
@@ -154,13 +193,34 @@ export function PostCard({ post, variant = 'dashboard', authorName }: PostCardPr
               align="end"
               className="bg-bg-surface border-border"
             >
-              <DropdownMenuItem className="font-sans text-sm text-text-primary hover:bg-bg-raised cursor-pointer">
-                Publish to group
-              </DropdownMenuItem>
-              <DropdownMenuItem className="font-sans text-sm text-text-primary hover:bg-bg-raised cursor-pointer">
-                Make private
-              </DropdownMenuItem>
-              <DropdownMenuItem className="font-sans text-sm text-red-400 hover:bg-bg-raised cursor-pointer">
+              {post.status !== 'published' && (
+                <DropdownMenuItem 
+                  onClick={() => handleStatusChange('published')}
+                  className="font-sans text-sm text-text-primary hover:bg-bg-raised cursor-pointer"
+                >
+                  Publish to group
+                </DropdownMenuItem>
+              )}
+              {post.status !== 'private' && (
+                <DropdownMenuItem 
+                  onClick={() => handleStatusChange('private')}
+                  className="font-sans text-sm text-text-primary hover:bg-bg-raised cursor-pointer"
+                >
+                  Make private
+                </DropdownMenuItem>
+              )}
+              {post.status !== 'draft' && (
+                <DropdownMenuItem 
+                  onClick={() => handleStatusChange('draft')}
+                  className="font-sans text-sm text-text-primary hover:bg-bg-raised cursor-pointer"
+                >
+                  Move to drafts
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem 
+                onClick={handleDelete}
+                className="font-sans text-sm text-red-400 hover:bg-bg-raised cursor-pointer"
+              >
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>

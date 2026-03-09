@@ -1,25 +1,34 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { signUp } from '@/lib/auth-actions'
 
 export default function SignupPage() {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
     
-    // Simulate signup
-    await new Promise(resolve => setTimeout(resolve, 500))
-    router.push('/room')
+    const formData = new FormData()
+    formData.append('email', email)
+    formData.append('password', password)
+    formData.append('username', username)
+    formData.append('displayName', username)
+    
+    const result = await signUp(formData)
+    if (result?.error) {
+      setError(result.error)
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -28,6 +37,12 @@ export default function SignupPage() {
         <h1 className="font-serif text-2xl text-text-primary">
           Create your account.
         </h1>
+
+        {error && (
+          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-md text-red-400 text-sm font-sans">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="space-y-2">
@@ -43,6 +58,7 @@ export default function SignupPage() {
               placeholder="yourname"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              required
               className="w-full bg-bg-surface border-border text-text-primary placeholder:text-text-muted focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30"
             />
           </div>
@@ -60,6 +76,7 @@ export default function SignupPage() {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
               className="w-full bg-bg-surface border-border text-text-primary placeholder:text-text-muted focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30"
             />
           </div>
@@ -74,9 +91,11 @@ export default function SignupPage() {
             <Input
               id="password"
               type="password"
-              placeholder="Create a password"
+              placeholder="Create a password (min 6 characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
               className="w-full bg-bg-surface border-border text-text-primary placeholder:text-text-muted focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30"
             />
           </div>
@@ -86,7 +105,7 @@ export default function SignupPage() {
             disabled={isLoading}
             className="w-full bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
           >
-            Create account
+            {isLoading ? 'Creating account...' : 'Create account'}
           </Button>
         </form>
 

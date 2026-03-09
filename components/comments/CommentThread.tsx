@@ -1,33 +1,66 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Comment } from '@/lib/types'
-import { getUserById, formatRelativeDate, currentUser } from '@/lib/mock-data'
+import { Comment, Profile, createComment } from '@/lib/db'
 
 interface CommentThreadProps {
-  comments: Comment[]
+  comments: (Comment & { profiles: Profile })[]
   postId: string
+  currentUserId?: string
 }
 
 interface CommentItemProps {
-  comment: Comment
-  allComments: Comment[]
+  comment: Comment & { profiles: Profile }
+  allComments: (Comment & { profiles: Profile })[]
+  postId: string
+  currentUserId?: string
   depth?: number
 }
 
-function CommentItem({ comment, allComments, depth = 0 }: CommentItemProps) {
+function formatRelativeDate(dateString: string): string {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+  
+  if (diffInSeconds < 60) return 'just now'
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
+  
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }: CommentItemProps) {
+  const router = useRouter()
   const [showReplyForm, setShowReplyForm] = useState(false)
   const [replyContent, setReplyContent] = useState('')
-  const author = getUserById(comment.authorId)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const author = comment.profiles
   
-  const replies = allComments.filter(c => c.parentId === comment.id)
+  const replies = allComments.filter(c => c.parent_id === comment.id)
 
-  const handleSubmitReply = (e: React.FormEvent) => {
+  const handleSubmitReply = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulate posting reply
-    setReplyContent('')
-    setShowReplyForm(false)
+    if (!currentUserId || !replyContent.trim()) return
+
+    setIsSubmitting(true)
+    try {
+      await createComment({
+        post_id: postId,
+        user_id: currentUserId,
+        content: replyContent.trim(),
+        parent_id: comment.id,
+      })
+      setReplyContent('')
+      setShowReplyForm(false)
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to post reply:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -35,17 +68,17 @@ function CommentItem({ comment, allComments, depth = 0 }: CommentItemProps) {
       <div className="flex gap-3">
         {/* Avatar */}
         <div className="w-8 h-8 rounded-full bg-accent-subtle text-accent-blue flex items-center justify-center text-sm font-medium flex-shrink-0">
-          {author?.displayName.charAt(0).toUpperCase()}
+          {(author?.display_name || author?.username || 'A').charAt(0).toUpperCase()}
         </div>
 
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center gap-2">
             <span className="font-sans text-sm font-medium text-text-primary">
-              {author?.displayName}
+              {author?.display_name || author?.username}
             </span>
             <span className="font-sans text-xs text-text-muted">
-              {formatRelativeDate(comment.createdAt)}
+              {formatRelativeDate(comment.created_at)}
             </span>
           </div>
 
@@ -55,12 +88,14 @@ function CommentItem({ comment, allComments, depth = 0 }: CommentItemProps) {
           </p>
 
           {/* Reply button */}
-          <button
-            onClick={() => setShowReplyForm(!showReplyForm)}
-            className="mt-2 font-sans text-xs text-text-secondary hover:text-text-primary transition-colors"
-          >
-            Reply
-          </button>
+          {currentUserId && (
+            <button
+              onClick={() => setShowReplyForm(!showReplyForm)}
+              className="mt-2 font-sans text-xs text-text-secondary hover:text-text-primary transition-colors"
+            >
+              Reply
+            </button>
+          )}
 
           {/* Reply form */}
           {showReplyForm && (
@@ -85,9 +120,10 @@ function CommentItem({ comment, allComments, depth = 0 }: CommentItemProps) {
                 <Button
                   type="submit"
                   size="sm"
+                  disabled={isSubmitting || !replyContent.trim()}
                   className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium text-sm"
                 >
-                  Reply
+                  {isSubmitting ? 'Posting...' : 'Reply'}
                 </Button>
               </div>
             </form>
@@ -103,6 +139,8 @@ function CommentItem({ comment, allComments, depth = 0 }: CommentItemProps) {
               key={reply.id} 
               comment={reply} 
               allComments={allComments}
+              postId={postId}
+              currentUserId={currentUserId}
               depth={depth + 1}
             />
           ))}
@@ -112,16 +150,32 @@ function CommentItem({ comment, allComments, depth = 0 }: CommentItemProps) {
   )
 }
 
-export function CommentThread({ comments, postId }: CommentThreadProps) {
+export function CommentThread({ comments, postId, currentUserId }: CommentThreadProps) {
+  const router = useRouter()
   const [newComment, setNewComment] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Get top-level comments (no parent)
-  const topLevelComments = comments.filter(c => !c.parentId)
+  const topLevelComments = comments.filter(c => !c.parent_id)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulate posting comment
-    setNewComment('')
+    if (!currentUserId || !newComment.trim()) return
+
+    setIsSubmitting(true)
+    try {
+      await createComment({
+        post_id: postId,
+        user_id: currentUserId,
+        content: newComment.trim(),
+      })
+      setNewComment('')
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to post comment:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -132,31 +186,37 @@ export function CommentThread({ comments, postId }: CommentThreadProps) {
       </h2>
 
       {/* New comment form */}
-      <form onSubmit={handleSubmit} className="mt-6">
-        <div className="flex gap-3">
-          <div className="w-8 h-8 rounded-full bg-accent-subtle text-accent-blue flex items-center justify-center text-sm font-medium flex-shrink-0">
-            {currentUser.displayName.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1">
-            <textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add to the conversation..."
-              className="w-full bg-bg-surface border border-border rounded-md p-3 text-sm text-text-primary placeholder:text-text-muted resize-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30 outline-none"
-              rows={3}
-            />
-            <div className="mt-2 flex justify-end">
-              <Button
-                type="submit"
-                disabled={!newComment.trim()}
-                className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium text-sm disabled:opacity-50"
-              >
-                Post
-              </Button>
+      {currentUserId ? (
+        <form onSubmit={handleSubmit} className="mt-6">
+          <div className="flex gap-3">
+            <div className="w-8 h-8 rounded-full bg-accent-subtle text-accent-blue flex items-center justify-center text-sm font-medium flex-shrink-0">
+              U
+            </div>
+            <div className="flex-1">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Add to the conversation..."
+                className="w-full bg-bg-surface border border-border rounded-md p-3 text-sm text-text-primary placeholder:text-text-muted resize-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30 outline-none"
+                rows={3}
+              />
+              <div className="mt-2 flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={!newComment.trim() || isSubmitting}
+                  className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium text-sm disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Posting...' : 'Post'}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </form>
+        </form>
+      ) : (
+        <p className="mt-6 font-sans text-sm text-text-muted">
+          Sign in to join the conversation.
+        </p>
+      )}
 
       {/* Comments list */}
       <div className="mt-8 space-y-6">
@@ -165,6 +225,8 @@ export function CommentThread({ comments, postId }: CommentThreadProps) {
             key={comment.id} 
             comment={comment} 
             allComments={comments}
+            postId={postId}
+            currentUserId={currentUserId}
           />
         ))}
       </div>
