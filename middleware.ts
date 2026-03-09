@@ -3,14 +3,19 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
-  // Check site gate first - every route except /enter and /api/verify-gate must have the cookie
-  const siteUnlocked = request.cookies.get('site-unlocked')?.value === 'true'
-  const isEnterPage = request.nextUrl.pathname === '/enter'
-  const isVerifyGateApi = request.nextUrl.pathname === '/api/verify-gate'
+  // Site gate - check if enabled via SITE_PASSWORD env var
+  const sitePassword = process.env.SITE_PASSWORD
+  const siteGateEnabled = !!sitePassword
   
-  // If site is locked and not on enter page or verify-gate API, redirect to enter
-  if (!siteUnlocked && !isEnterPage && !isVerifyGateApi) {
-    return NextResponse.redirect(new URL('/enter', request.url))
+  if (siteGateEnabled) {
+    const siteUnlocked = request.cookies.get('site-unlocked')?.value === 'true'
+    const isEnterPage = request.nextUrl.pathname === '/enter'
+    const isVerifyGateApi = request.nextUrl.pathname === '/api/verify-gate'
+    
+    // If site is locked and not on enter page or verify-gate API, redirect to enter
+    if (!siteUnlocked && !isEnterPage && !isVerifyGateApi) {
+      return NextResponse.redirect(new URL('/enter', request.url))
+    }
   }
 
   // Update the Supabase session
