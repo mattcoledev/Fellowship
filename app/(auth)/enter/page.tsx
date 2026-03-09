@@ -15,21 +15,26 @@ export default function EnterPage() {
     setError(null)
     
     try {
+      console.log('[v0] Calling /api/verify-gate...')
       const res = await fetch('/api/verify-gate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
       })
       
+      console.log('[v0] Response status:', res.status)
       const result = await res.json()
+      console.log('[v0] Result:', result)
       
       if (result.success) {
+        console.log('[v0] Success! Redirecting...')
         window.location.href = '/login'
       } else {
         setError(result.error || 'Invalid password')
         setIsLoading(false)
       }
-    } catch {
+    } catch (err) {
+      console.log('[v0] Error:', err)
       setError('Something went wrong')
       setIsLoading(false)
     }
