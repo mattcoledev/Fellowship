@@ -15,12 +15,16 @@ export default function EnterPage() {
     setIsLoading(true)
     setError(null)
     
+    console.log('[v0] Submitting password...')
     const result = await verifySitePassword(password)
+    console.log('[v0] Result:', result)
     
     if (result.success) {
+      console.log('[v0] Success! Redirecting to /login...')
       // Use window.location for full page reload to ensure cookie is read by middleware
       window.location.href = '/login'
     } else {
+      console.log('[v0] Failed:', result.error)
       setError(result.error || 'Invalid password')
       setIsLoading(false)
     }
