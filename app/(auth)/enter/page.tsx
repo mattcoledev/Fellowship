@@ -1,7 +1,33 @@
-import Link from 'next/link'
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { verifySitePassword } from './actions'
 
 export default function EnterPage() {
+  const router = useRouter()
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    
+    const result = await verifySitePassword(password)
+    
+    if (result.success) {
+      router.push('/login')
+      router.refresh()
+    } else {
+      setError(result.error || 'Invalid password')
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-bg-base noise-bg flex items-center justify-center p-4">
       <div className="w-full max-w-sm bg-bg-surface border border-border rounded-xl p-8 text-center">
@@ -12,22 +38,34 @@ export default function EnterPage() {
           A private space for writing and reading.
         </p>
 
-        <div className="mt-8 space-y-3">
-          <Button 
-            asChild
-            className="w-full bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
-          >
-            <Link href="/login">Sign in</Link>
-          </Button>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <div className="text-left">
+            <label htmlFor="password" className="block font-sans text-sm text-text-secondary mb-2">
+              Speak friend and enter
+            </label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password"
+              className="w-full bg-bg-raised border-border text-text-primary placeholder:text-text-muted font-mono"
+              disabled={isLoading}
+            />
+          </div>
+          
+          {error && (
+            <p className="text-sm text-red-400 font-sans">{error}</p>
+          )}
           
           <Button 
-            asChild
-            variant="outline"
-            className="w-full border-border text-text-secondary hover:text-text-primary hover:bg-bg-raised rounded-md font-sans font-medium"
+            type="submit"
+            disabled={isLoading || !password}
+            className="w-full bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
           >
-            <Link href="/signup">Create account</Link>
+            {isLoading ? 'Verifying...' : 'Enter'}
           </Button>
-        </div>
+        </form>
       </div>
     </div>
   )

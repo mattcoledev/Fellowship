@@ -3,7 +3,16 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
-  // First update the session
+  // Check site gate first - every route except /enter must have the cookie
+  const siteUnlocked = request.cookies.get('site-unlocked')?.value === 'true'
+  const isEnterPage = request.nextUrl.pathname === '/enter'
+  
+  // If site is locked and not on enter page, redirect to enter
+  if (!siteUnlocked && !isEnterPage) {
+    return NextResponse.redirect(new URL('/enter', request.url))
+  }
+
+  // Update the Supabase session
   const response = await updateSession(request)
   
   // Check if user is authenticated for protected routes
@@ -34,8 +43,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect authenticated users away from auth pages
-  const authPaths = ['/login', '/signup', '/enter']
+  // Redirect authenticated users away from auth pages (but not /enter)
+  const authPaths = ['/login', '/signup']
   const isAuthPath = authPaths.some(path => 
     request.nextUrl.pathname === path
   )
