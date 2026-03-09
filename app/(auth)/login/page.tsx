@@ -2,11 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { signIn, signInWithMagicLink } from '@/lib/auth-actions'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -18,15 +20,20 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
     
-    const formData = new FormData()
-    formData.append('email', email)
-    formData.append('password', password)
+    const supabase = createClient()
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
     
-    const result = await signIn(formData)
-    if (result?.error) {
-      setError(result.error)
+    if (signInError) {
+      setError(signInError.message)
       setIsLoading(false)
+      return
     }
+    
+    router.push('/room')
+    router.refresh()
   }
 
   const handleMagicLink = async () => {
@@ -37,14 +44,18 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
     
-    const formData = new FormData()
-    formData.append('email', email)
+    const supabase = createClient()
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/room`,
+      },
+    })
     
-    const result = await signInWithMagicLink(formData)
-    if (result?.error) {
-      setError(result.error)
-    } else if (result?.success) {
-      setMessage(result.success)
+    if (otpError) {
+      setError(otpError.message)
+    } else {
+      setMessage('Check your email for the magic link!')
     }
     setIsLoading(false)
   }
