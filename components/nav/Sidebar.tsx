@@ -37,7 +37,7 @@ export function Sidebar() {
       {/* Mobile header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-bg-base border-b border-border z-50 flex items-center justify-between px-4">
         <Link href="/room" className="font-serif text-xl text-text-primary">
-          The Room
+          The Fellowship
         </Link>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -65,7 +65,7 @@ export function Sidebar() {
         {/* Brand */}
         <div className="p-6 lg:pt-6 pt-20">
           <Link href="/room" className="font-serif text-2xl text-text-primary">
-            The Room
+            The Fellowship
           </Link>
         </div>
 

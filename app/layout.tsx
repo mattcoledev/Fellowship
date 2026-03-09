@@ -28,7 +28,7 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'The Room',
+  title: 'The Fellowship',
   description: 'A private space for writing and reading.',
 }
 
