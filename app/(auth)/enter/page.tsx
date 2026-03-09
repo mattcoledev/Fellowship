@@ -41,7 +41,7 @@ export default function EnterPage() {
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div className="text-left">
             <label htmlFor="password" className="block font-sans text-sm text-text-secondary mb-2">
-              Speak friend and enter
+              Password
             </label>
             <Input
               id="password"
