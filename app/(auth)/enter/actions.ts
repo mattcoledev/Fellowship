@@ -11,7 +11,8 @@ export async function verifySitePassword(password: string) {
     cookieStore.set('site-unlocked', 'true', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
+      path: '/',
       maxAge: 60 * 60 * 24 * 30, // 30 days
     })
     return { success: true }
@@ -22,7 +23,8 @@ export async function verifySitePassword(password: string) {
     cookieStore.set('site-unlocked', 'true', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
+      path: '/',
       maxAge: 60 * 60 * 24 * 30, // 30 days
     })
     return { success: true }
