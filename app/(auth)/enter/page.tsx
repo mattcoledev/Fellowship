@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { verifySitePassword } from './actions'
 
 export default function EnterPage() {
   const [password, setPassword] = useState('')
@@ -15,17 +14,23 @@ export default function EnterPage() {
     setIsLoading(true)
     setError(null)
     
-    console.log('[v0] Submitting password...')
-    const result = await verifySitePassword(password)
-    console.log('[v0] Result:', result)
-    
-    if (result.success) {
-      console.log('[v0] Success! Redirecting to /login...')
-      // Use window.location for full page reload to ensure cookie is read by middleware
-      window.location.href = '/login'
-    } else {
-      console.log('[v0] Failed:', result.error)
-      setError(result.error || 'Invalid password')
+    try {
+      const res = await fetch('/api/verify-gate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      
+      const result = await res.json()
+      
+      if (result.success) {
+        window.location.href = '/login'
+      } else {
+        setError(result.error || 'Invalid password')
+        setIsLoading(false)
+      }
+    } catch {
+      setError('Something went wrong')
       setIsLoading(false)
     }
   }
