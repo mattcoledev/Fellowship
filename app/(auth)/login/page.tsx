@@ -32,7 +32,7 @@ export default function LoginPage() {
       return
     }
     
-    router.push('/room')
+    router.push('/common')
     router.refresh()
   }
 
@@ -48,7 +48,7 @@ export default function LoginPage() {
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/room`,
+        emailRedirectTo: `${window.location.origin}/common`,
       },
     })
     
