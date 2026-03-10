@@ -277,6 +277,151 @@ export const comments: Comment[] = [
   },
 ]
 
+// Forum types
+export interface Thread {
+  id: string
+  authorId: string
+  title: string | null
+  body: string
+  createdAt: string
+  replyCount: number
+  lastReplyBy: string | null
+  lastReplyAt: string | null
+}
+
+export interface Reply {
+  id: string
+  threadId: string
+  authorId: string
+  content: string
+  createdAt: string
+  parentId: string | null
+}
+
+// Forum mock data
+export const threads: Thread[] = [
+  {
+    id: '1',
+    authorId: '3', // sarah
+    title: 'Has anyone read the new Marilynne Robinson?',
+    body: 'Just finished her new essays. The one on Calvinist imagination wrecked me. Curious if anyone else has gotten to it.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(), // 4 hours ago
+    replyCount: 4,
+    lastReplyBy: '2', // james
+    lastReplyAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+  },
+  {
+    id: '2',
+    authorId: '1', // matt
+    title: null,
+    body: 'Interesting piece on why long-form reading is declining even among people who love books. Not sure I fully agree but worth a read.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(), // yesterday
+    replyCount: 7,
+    lastReplyBy: '3', // sarah
+    lastReplyAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // yesterday
+  },
+  {
+    id: '3',
+    authorId: '2', // james
+    title: 'Writing in the morning vs. at night',
+    body: "I've always been a night writer but I've been experimenting with mornings for the past month. The quality feels different. Anyone else notice this?",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(), // 4 days ago
+    replyCount: 11,
+    lastReplyBy: '4', // marcus
+    lastReplyAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
+  },
+  {
+    id: '4',
+    authorId: '4', // marcus
+    title: null,
+    body: 'Does anyone use a paper notebook alongside digital writing or has everything moved to the screen?',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(), // 4 days ago
+    replyCount: 3,
+    lastReplyBy: '1', // matt
+    lastReplyAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
+  },
+  {
+    id: '5',
+    authorId: '3', // sarah
+    title: "Prompt: write about a place you can't go back to",
+    body: "Doesn't have to be long. Doesn't have to be polished. Just write it.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8).toISOString(), // 8 days ago
+    replyCount: 2,
+    lastReplyBy: '2', // james
+    lastReplyAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(), // 1 week ago
+  },
+  {
+    id: '6',
+    authorId: '2', // james
+    title: 'The problem with productivity advice for creative work',
+    body: 'Most productivity writing assumes the bottleneck is time or energy. For writing the bottleneck is usually something else entirely.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 9).toISOString(), // 9 days ago
+    replyCount: 8,
+    lastReplyBy: '3', // sarah
+    lastReplyAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(), // 1 week ago
+  },
+]
+
+// Replies for thread 3 (james's morning vs night writing thread)
+export const replies: Reply[] = [
+  {
+    id: '1',
+    threadId: '3',
+    authorId: '1', // matt
+    content: "Morning writing is cleaner for me but I can only do it before I look at my phone. The moment I check anything it's gone.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
+    parentId: null,
+  },
+  {
+    id: '2',
+    threadId: '3',
+    authorId: '3', // sarah
+    content: 'This is exactly it. The phone is the enemy of the morning.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
+    parentId: '1',
+  },
+  {
+    id: '3',
+    threadId: '3',
+    authorId: '3', // sarah
+    content: "I've read that the theory is morning writing accesses something less filtered. I'm skeptical but the results are hard to argue with.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
+    parentId: null,
+  },
+  {
+    id: '4',
+    threadId: '3',
+    authorId: '4', // marcus
+    content: "Night writer here and I don't think I can change it. My brain doesn't warm up until about 9pm.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
+    parentId: null,
+  },
+  {
+    id: '5',
+    threadId: '3',
+    authorId: '2', // james
+    content: 'I used to be the same. Took about three weeks before mornings felt natural.',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
+    parentId: '4',
+  },
+  {
+    id: '6',
+    threadId: '3',
+    authorId: '1', // matt
+    content: "The other variable nobody talks about is what you read before writing. Reading good prose right before seems to help regardless of time of day.",
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
+    parentId: null,
+  },
+]
+
+export function getThreadById(id: string): Thread | undefined {
+  return threads.find(thread => thread.id === id)
+}
+
+export function getRepliesByThreadId(threadId: string): Reply[] {
+  return replies.filter(reply => reply.threadId === threadId)
+}
+
 // Helper functions
 export function getPostsByAuthor(authorId: string): Post[] {
   return posts.filter(post => post.authorId === authorId)
