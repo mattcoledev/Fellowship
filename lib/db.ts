@@ -45,6 +45,31 @@ export type Like = {
   created_at: string
 }
 
+export type Thread = {
+  id: string
+  user_id: string
+  title: string | null
+  body: string
+  reply_count: number
+  last_reply_by: string | null
+  last_reply_at: string | null
+  created_at: string
+  updated_at: string
+  profiles?: Profile
+  last_reply_profile?: Profile
+}
+
+export type Reply = {
+  id: string
+  thread_id: string
+  user_id: string
+  parent_id: string | null
+  content: string
+  created_at: string
+  updated_at: string
+  profiles?: Profile
+}
+
 // Posts
 export async function getUserPosts(userId: string) {
   const supabase = await createClient()
@@ -281,4 +306,51 @@ export async function getUserPublishedPosts(userId: string) {
 
   if (error) throw error
   return data as Post[]
+}
+
+// Forum - Threads
+export async function getThreads() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('threads')
+    .select(`
+      *,
+      profiles:user_id (id, username, display_name, avatar_url),
+      last_reply_profile:last_reply_by (id, username, display_name)
+    `)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data as Thread[]
+}
+
+export async function getThreadById(id: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('threads')
+    .select(`
+      *,
+      profiles:user_id (id, username, display_name, avatar_url)
+    `)
+    .eq('id', id)
+    .single()
+
+  if (error) throw error
+  return data as Thread
+}
+
+// Forum - Replies
+export async function getThreadReplies(threadId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('replies')
+    .select(`
+      *,
+      profiles:user_id (id, username, display_name, avatar_url)
+    `)
+    .eq('thread_id', threadId)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  return data as (Reply & { profiles: Profile })[]
 }

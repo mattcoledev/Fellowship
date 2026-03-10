@@ -1,11 +1,11 @@
-'use client'
-
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ThreadCard } from '@/components/forum/ThreadCard'
-import { threads } from '@/lib/mock-data'
+import { getThreads } from '@/lib/db'
 
-export default function ForumPage() {
+export default async function ForumPage() {
+  const threads = await getThreads()
+
   return (
     <div className="max-w-[900px] mx-auto px-6 py-8">
       {/* Header */}
