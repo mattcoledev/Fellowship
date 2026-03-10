@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Comment, Profile, createComment } from '@/lib/db-client'
+import { Comment, Profile, createComment, updateComment } from '@/lib/db-client'
 
 interface CommentThreadProps {
   comments: (Comment & { profiles: Profile })[]
@@ -37,7 +37,11 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }:
   const [showReplyForm, setShowReplyForm] = useState(false)
   const [replyContent, setReplyContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState(comment.content)
+  const [isSaving, setIsSaving] = useState(false)
   const author = comment.profiles
+  const isOwner = currentUserId === comment.user_id
   
   const replies = allComments.filter(c => c.parent_id === comment.id)
 
@@ -63,6 +67,25 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }:
     }
   }
 
+  const handleSaveEdit = async () => {
+    if (!editContent.trim()) return
+    setIsSaving(true)
+    try {
+      await updateComment(comment.id, editContent.trim())
+      setIsEditing(false)
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to update comment:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditContent(comment.content)
+    setIsEditing(false)
+  }
+
   return (
     <div className={depth > 0 ? 'ml-8' : ''}>
       <div className="flex gap-3">
@@ -80,21 +103,65 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }:
             <span className="font-sans text-xs text-text-muted">
               {formatRelativeDate(comment.created_at)}
             </span>
+            {comment.updated_at !== comment.created_at && (
+              <span className="font-sans text-xs text-text-muted">(edited)</span>
+            )}
           </div>
 
-          {/* Content */}
-          <p className="mt-1 font-sans text-sm text-text-primary">
-            {comment.content}
-          </p>
+          {/* Content or Edit Form */}
+          {isEditing ? (
+            <div className="mt-2 space-y-2">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full bg-bg-surface border border-border rounded-md p-3 text-sm text-text-primary placeholder:text-text-muted resize-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30 outline-none"
+                rows={3}
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSaveEdit}
+                  disabled={isSaving || !editContent.trim()}
+                  size="sm"
+                  className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium text-xs"
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </Button>
+                <Button
+                  onClick={handleCancelEdit}
+                  variant="ghost"
+                  size="sm"
+                  className="text-text-secondary hover:text-text-primary hover:bg-bg-raised font-sans text-xs"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="mt-1 font-sans text-sm text-text-primary">
+                {comment.content}
+              </p>
 
-          {/* Reply button */}
-          {currentUserId && (
-            <button
-              onClick={() => setShowReplyForm(!showReplyForm)}
-              className="mt-2 font-sans text-xs text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Reply
-            </button>
+              {/* Action buttons */}
+              <div className="mt-2 flex items-center gap-3">
+                {currentUserId && (
+                  <button
+                    onClick={() => setShowReplyForm(!showReplyForm)}
+                    className="font-sans text-xs text-text-secondary hover:text-text-primary transition-colors"
+                  >
+                    Reply
+                  </button>
+                )}
+                {isOwner && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="font-sans text-xs text-text-secondary hover:text-text-primary transition-colors"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+            </>
           )}
 
           {/* Reply form */}

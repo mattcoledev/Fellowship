@@ -137,6 +137,19 @@ export async function createComment(comment: {
   return data as Comment & { profiles: Profile }
 }
 
+export async function updateComment(id: string, content: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('comments')
+    .update({ content })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as Comment
+}
+
 // Client-side profile operations
 export async function updateProfile(id: string, updates: Partial<Profile>) {
   const supabase = createClient()
