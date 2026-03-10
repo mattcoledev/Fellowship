@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { 
   PenLine, 
   Users, 
+  MessageCircle,
   User, 
   Settings, 
   LogOut,
@@ -22,6 +23,7 @@ interface SidebarProps {
 const navItems = [
   { href: '/room', label: 'Your Room', icon: PenLine },
   { href: '/common', label: 'The Common Room', icon: Users },
+  { href: '/forum', label: 'The Forum', icon: MessageCircle },
 ]
 
 export function Sidebar({ username }: SidebarProps) {
