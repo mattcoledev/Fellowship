@@ -39,6 +39,8 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }:
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editContent, setEditContent] = useState(comment.content)
+  const [displayContent, setDisplayContent] = useState(comment.content)
+  const [wasEdited, setWasEdited] = useState(comment.updated_at !== comment.created_at)
   const [isSaving, setIsSaving] = useState(false)
   const author = comment.profiles
   const isOwner = currentUserId === comment.user_id
@@ -72,6 +74,8 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }:
     setIsSaving(true)
     try {
       await updateComment(comment.id, editContent.trim())
+      setDisplayContent(editContent.trim())
+      setWasEdited(true)
       setIsEditing(false)
       router.refresh()
     } catch (error) {
@@ -103,7 +107,7 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }:
             <span className="font-sans text-xs text-text-muted">
               {formatRelativeDate(comment.created_at)}
             </span>
-            {comment.updated_at !== comment.created_at && (
+            {wasEdited && (
               <span className="font-sans text-xs text-text-muted">(edited)</span>
             )}
           </div>
@@ -139,7 +143,7 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }:
           ) : (
             <>
               <p className="mt-1 font-sans text-sm text-text-primary">
-                {comment.content}
+                {displayContent}
               </p>
 
               {/* Action buttons */}

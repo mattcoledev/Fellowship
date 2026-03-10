@@ -23,6 +23,8 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId }: ReplyIte
   const isOwner = currentUserId === reply.user_id
   const [isEditing, setIsEditing] = useState(false)
   const [editContent, setEditContent] = useState(reply.content)
+  const [displayContent, setDisplayContent] = useState(reply.content)
+  const [wasEdited, setWasEdited] = useState(reply.updated_at !== reply.created_at)
   const [isSaving, setIsSaving] = useState(false)
 
   const handleSaveEdit = async () => {
@@ -30,6 +32,8 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId }: ReplyIte
     setIsSaving(true)
     try {
       await updateReply(reply.id, editContent.trim())
+      setDisplayContent(editContent.trim())
+      setWasEdited(true)
       setIsEditing(false)
       router.refresh()
     } catch (error) {
@@ -58,7 +62,7 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId }: ReplyIte
             <span className="font-sans text-xs text-text-muted">
               {formatRelativeDate(reply.created_at)}
             </span>
-            {reply.updated_at !== reply.created_at && (
+            {wasEdited && (
               <span className="font-sans text-xs text-text-muted">(edited)</span>
             )}
           </div>
@@ -93,7 +97,7 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId }: ReplyIte
           ) : (
             <>
               <p className="font-sans text-sm text-text-primary mb-2 whitespace-pre-wrap">
-                {reply.content}
+                {displayContent}
               </p>
               <div className="flex items-center gap-3">
                 {currentUserId && (
