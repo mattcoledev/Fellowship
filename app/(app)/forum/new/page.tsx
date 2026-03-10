@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { createThread } from '@/lib/db-client'
+import { createClient } from '@/lib/supabase/client'
 
 export default function NewThreadPage() {
   const router = useRouter()
@@ -13,6 +15,20 @@ export default function NewThreadPage() {
   const [body, setBody] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const getUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+      } else {
+        router.push('/login')
+      }
+    }
+    getUser()
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,13 +39,26 @@ export default function NewThreadPage() {
       return
     }
 
+    if (!userId) {
+      setError('You must be logged in to post.')
+      return
+    }
+
     setIsSubmitting(true)
     
-    // In a real app, this would create the thread in the database
-    // For now, just redirect to the forum
-    setTimeout(() => {
+    try {
+      await createThread({
+        user_id: userId,
+        title: title.trim() || null,
+        body: body.trim(),
+      })
       router.push('/forum')
-    }, 500)
+      router.refresh()
+    } catch (err) {
+      console.error('Failed to create thread:', err)
+      setError('Failed to create thread. Please try again.')
+      setIsSubmitting(false)
+    }
   }
 
   return (

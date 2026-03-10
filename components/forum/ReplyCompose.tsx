@@ -8,10 +8,12 @@ interface ReplyComposeProps {
   currentUserInitial: string
   replyTo?: string | null
   onClearReplyTo?: () => void
+  onSubmit: (content: string) => Promise<void>
 }
 
-export function ReplyCompose({ currentUserInitial, replyTo, onClearReplyTo }: ReplyComposeProps) {
+export function ReplyCompose({ currentUserInitial, replyTo, onClearReplyTo, onSubmit }: ReplyComposeProps) {
   const [content, setContent] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -21,11 +23,17 @@ export function ReplyCompose({ currentUserInitial, replyTo, onClearReplyTo }: Re
     }
   }, [replyTo])
 
-  const handleSubmit = () => {
-    if (!content.trim()) return
-    // In a real app, this would post the reply
-    setContent('')
-    onClearReplyTo?.()
+  const handleSubmit = async () => {
+    if (!content.trim() || isSubmitting) return
+    
+    setIsSubmitting(true)
+    try {
+      await onSubmit(content.trim())
+      setContent('')
+      onClearReplyTo?.()
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -44,10 +52,10 @@ export function ReplyCompose({ currentUserInitial, replyTo, onClearReplyTo }: Re
         <div className="flex justify-end">
           <Button
             onClick={handleSubmit}
-            disabled={!content.trim()}
+            disabled={!content.trim() || isSubmitting}
             className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium text-sm"
           >
-            Reply
+            {isSubmitting ? 'Posting...' : 'Reply'}
           </Button>
         </div>
       </div>
