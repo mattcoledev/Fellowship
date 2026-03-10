@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { PostCard } from '@/components/posts/PostCard'
@@ -88,9 +89,17 @@ export function CommonRoomFeed({ initialPosts }: CommonRoomFeedProps) {
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-8">
       {/* Header */}
-      <h1 className="font-serif text-2xl text-text-primary mb-8">
-        The Common Room
-      </h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="font-serif text-2xl text-text-primary">
+          The Common Room
+        </h1>
+        <Button 
+          asChild
+          className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
+        >
+          <Link href="/room/new">New Post</Link>
+        </Button>
+      </div>
 
       {/* Filter bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
