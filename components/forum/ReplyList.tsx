@@ -1,6 +1,9 @@
 'use client'
 
-import { Reply, Profile } from '@/lib/db-client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Reply, Profile, updateReply } from '@/lib/db-client'
+import { Button } from '@/components/ui/button'
 import { formatDistanceToNow } from 'date-fns'
 
 interface ReplyItemProps {
@@ -15,7 +18,31 @@ function formatRelativeDate(dateString: string) {
 }
 
 function ReplyItem({ reply, onReply, isNested = false, currentUserId }: ReplyItemProps) {
+  const router = useRouter()
   const author = reply.profiles
+  const isOwner = currentUserId === reply.user_id
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState(reply.content)
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleSaveEdit = async () => {
+    if (!editContent.trim()) return
+    setIsSaving(true)
+    try {
+      await updateReply(reply.id, editContent.trim())
+      setIsEditing(false)
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to update reply:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditContent(reply.content)
+    setIsEditing(false)
+  }
 
   return (
     <div className={isNested ? 'ml-8' : ''}>
@@ -31,17 +58,62 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId }: ReplyIte
             <span className="font-sans text-xs text-text-muted">
               {formatRelativeDate(reply.created_at)}
             </span>
+            {reply.updated_at !== reply.created_at && (
+              <span className="font-sans text-xs text-text-muted">(edited)</span>
+            )}
           </div>
-          <p className="font-sans text-sm text-text-primary mb-2 whitespace-pre-wrap">
-            {reply.content}
-          </p>
-          {currentUserId && (
-            <button
-              onClick={() => onReply(author?.username || '', reply.id)}
-              className="font-sans text-xs text-text-muted hover:text-text-primary transition-colors"
-            >
-              Reply
-            </button>
+          
+          {isEditing ? (
+            <div className="space-y-2">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full bg-bg-surface border border-border rounded-md p-3 text-sm text-text-primary placeholder:text-text-muted resize-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30 outline-none"
+                rows={3}
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSaveEdit}
+                  disabled={isSaving || !editContent.trim()}
+                  size="sm"
+                  className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium text-xs"
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </Button>
+                <Button
+                  onClick={handleCancelEdit}
+                  variant="ghost"
+                  size="sm"
+                  className="text-text-secondary hover:text-text-primary hover:bg-bg-raised font-sans text-xs"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="font-sans text-sm text-text-primary mb-2 whitespace-pre-wrap">
+                {reply.content}
+              </p>
+              <div className="flex items-center gap-3">
+                {currentUserId && (
+                  <button
+                    onClick={() => onReply(author?.username || '', reply.id)}
+                    className="font-sans text-xs text-text-muted hover:text-text-primary transition-colors"
+                  >
+                    Reply
+                  </button>
+                )}
+                {isOwner && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="font-sans text-xs text-text-muted hover:text-text-primary transition-colors"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>
