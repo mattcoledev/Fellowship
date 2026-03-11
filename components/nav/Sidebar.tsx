@@ -73,13 +73,10 @@ export function Sidebar({ username }: SidebarProps) {
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Brand */}
-        <div className="p-6 lg:pt-6 pt-20 flex items-center justify-between">
+        <div className="p-6 lg:pt-6 pt-20">
           <Link href="/room" className="font-serif text-2xl text-text-primary">
             The Fellowship
           </Link>
-          <div className="hidden lg:block">
-            <NotificationBell />
-          </div>
         </div>
 
         {/* Divider */}

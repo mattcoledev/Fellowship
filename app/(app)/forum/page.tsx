@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { ThreadCard } from '@/components/forum/ThreadCard'
 import { getThreads } from '@/lib/db'
 
@@ -13,12 +14,15 @@ export default async function ForumPage() {
         <h1 className="font-serif text-2xl text-text-primary">
           The Forum
         </h1>
-        <Button 
-          asChild
-          className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
-        >
-          <Link href="/forum/new">New Thread</Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <Button
+            asChild
+            className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
+          >
+            <Link href="/forum/new">New Thread</Link>
+          </Button>
+        </div>
       </div>
 
       {/* Thread list */}

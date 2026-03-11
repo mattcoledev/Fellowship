@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { PostCard } from '@/components/posts/PostCard'
 import { Post } from '@/lib/db-client'
 import { cn } from '@/lib/utils'
@@ -37,12 +38,15 @@ export function RoomDashboard({ posts }: RoomDashboardProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h1 className="font-serif text-2xl text-text-primary">Your Room</h1>
-        <Button 
-          asChild
-          className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
-        >
-          <Link href="/room/new">New Post</Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <Button
+            asChild
+            className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
+          >
+            <Link href="/room/new">New Post</Link>
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}

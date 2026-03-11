@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { PostCard } from '@/components/posts/PostCard'
 import { Post, Profile } from '@/lib/db-client'
 import { Search, ChevronDown } from 'lucide-react'
@@ -93,12 +94,15 @@ export function CommonRoomFeed({ initialPosts }: CommonRoomFeedProps) {
         <h1 className="font-serif text-2xl text-text-primary">
           The Common Room
         </h1>
-        <Button 
-          asChild
-          className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
-        >
-          <Link href="/room/new">New Post</Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <Button
+            asChild
+            className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
+          >
+            <Link href="/room/new">New Post</Link>
+          </Button>
+        </div>
       </div>
 
       {/* Filter bar */}
