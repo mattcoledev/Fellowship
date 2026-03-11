@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Thread, Reply, Profile, createReply } from '@/lib/db-client'
+import { Thread, Reply, Profile, createReply, deleteThread } from '@/lib/db-client'
 import { ReplyCompose } from './ReplyCompose'
 import { ReplyList } from './ReplyList'
 import { formatDistanceToNow } from 'date-fns'
@@ -14,23 +14,35 @@ interface ThreadDetailProps {
   thread: Thread & { profiles: Profile }
   replies: (Reply & { profiles: Profile })[]
   currentUserId: string | null
+  isAdmin?: boolean
 }
 
 function formatRelativeDate(dateString: string) {
   return formatDistanceToNow(new Date(dateString), { addSuffix: true })
 }
 
-export function ThreadDetail({ thread, replies: initialReplies, currentUserId }: ThreadDetailProps) {
+export function ThreadDetail({ thread, replies: initialReplies, currentUserId, isAdmin = false }: ThreadDetailProps) {
   const router = useRouter()
   const [replies, setReplies] = useState(initialReplies)
   const [replyTo, setReplyTo] = useState<{ username: string; replyId: string | null } | null>(null)
   const author = thread.profiles
-  
+
   // Check if within 15 minutes of posting (for edit button)
   const createdAt = new Date(thread.created_at)
   const now = new Date()
   const minutesSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60)
   const canEdit = currentUserId === thread.user_id && minutesSinceCreation < 15
+
+  const handleDelete = async () => {
+    if (!confirm('Delete this thread and all its replies?')) return
+    try {
+      await deleteThread(thread.id)
+      router.push('/forum')
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to delete thread:', error)
+    }
+  }
 
   const handleReply = (username: string, replyId: string | null = null) => {
     setReplyTo({ username, replyId })
@@ -83,15 +95,28 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId }:
           <span className="font-sans text-xs text-text-muted">
             {formatRelativeDate(thread.created_at)}
           </span>
-          {canEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="font-sans text-xs text-text-muted hover:text-text-primary ml-auto h-auto py-1 px-2"
-            >
-              Edit
-            </Button>
-          )}
+          <div className="ml-auto flex items-center gap-1">
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="font-sans text-xs text-text-muted hover:text-text-primary h-auto py-1 px-2"
+              >
+                Edit
+              </Button>
+            )}
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDelete}
+                className="h-auto py-1 px-2 text-text-muted hover:text-red-500"
+                aria-label="Delete thread"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            )}
+          </div>
         </div>
 
         {thread.title && (

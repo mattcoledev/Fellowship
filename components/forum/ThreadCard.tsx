@@ -1,24 +1,53 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { MessageCircle } from 'lucide-react'
-import { Thread, Profile } from '@/lib/db-client'
+import { MessageCircle, Pin, Trash2 } from 'lucide-react'
+import { Thread, Profile, updateThread, deleteThread } from '@/lib/db-client'
 import { formatDistanceToNow } from 'date-fns'
 
 interface ThreadCardProps {
-  thread: Thread & { 
+  thread: Thread & {
     profiles: Profile
     last_reply_profile?: Profile | null
   }
+  isAdmin?: boolean
 }
 
 function formatRelativeDate(dateString: string) {
   return formatDistanceToNow(new Date(dateString), { addSuffix: true })
 }
 
-export function ThreadCard({ thread }: ThreadCardProps) {
+export function ThreadCard({ thread, isAdmin = false }: ThreadCardProps) {
+  const router = useRouter()
   const author = thread.profiles
   const lastReplyAuthor = thread.last_reply_profile
+  const [isSticky, setIsSticky] = useState(thread.is_sticky)
+
+  const handleStickyToggle = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      await updateThread(thread.id, { is_sticky: !isSticky })
+      setIsSticky(!isSticky)
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to update sticky:', error)
+    }
+  }
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm('Delete this thread?')) return
+    try {
+      await deleteThread(thread.id)
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to delete thread:', error)
+    }
+  }
 
   return (
     <Link href={`/forum/${thread.id}`}>
@@ -34,6 +63,9 @@ export function ThreadCard({ thread }: ThreadCardProps) {
           <span className="font-sans text-xs text-text-muted">
             {formatRelativeDate(thread.created_at)}
           </span>
+          {isSticky && (
+            <Pin className="w-3.5 h-3.5 text-accent-blue ml-1" aria-label="Pinned" />
+          )}
         </div>
 
         {/* Title (if present) */}
@@ -54,12 +86,32 @@ export function ThreadCard({ thread }: ThreadCardProps) {
             <MessageCircle className="w-3.5 h-3.5" />
             <span className="font-sans text-xs">{thread.reply_count}</span>
           </div>
-          
-          {lastReplyAuthor && thread.last_reply_at && (
-            <span className="font-sans text-xs text-text-muted">
-              Last reply by {lastReplyAuthor.display_name || lastReplyAuthor.username} {formatRelativeDate(thread.last_reply_at)}
-            </span>
-          )}
+
+          <div className="flex items-center gap-3">
+            {lastReplyAuthor && thread.last_reply_at && (
+              <span className="font-sans text-xs text-text-muted">
+                Last reply by {lastReplyAuthor.display_name || lastReplyAuthor.username} {formatRelativeDate(thread.last_reply_at)}
+              </span>
+            )}
+            {isAdmin && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={handleStickyToggle}
+                  className={`p-1 rounded transition-colors ${isSticky ? 'text-accent-blue hover:text-text-secondary' : 'text-text-muted hover:text-accent-blue'}`}
+                  aria-label={isSticky ? 'Unpin thread' : 'Pin thread'}
+                >
+                  <Pin className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="p-1 rounded text-text-muted hover:text-red-500 transition-colors"
+                  aria-label="Delete thread"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Link>

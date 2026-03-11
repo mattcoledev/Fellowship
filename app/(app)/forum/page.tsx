@@ -3,8 +3,22 @@ import { Button } from '@/components/ui/button'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { ThreadCard } from '@/components/forum/ThreadCard'
 import { getThreads } from '@/lib/db'
+import { createClient } from '@/lib/supabase/server'
 
 export default async function ForumPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  let isAdmin = false
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    isAdmin = profile?.is_admin ?? false
+  }
+
   const threads = await getThreads()
 
   return (
@@ -29,7 +43,7 @@ export default async function ForumPage() {
       {threads.length > 0 ? (
         <div className="space-y-3">
           {threads.map((thread) => (
-            <ThreadCard key={thread.id} thread={thread} />
+            <ThreadCard key={thread.id} thread={thread} isAdmin={isAdmin} />
           ))}
         </div>
       ) : (
@@ -37,7 +51,7 @@ export default async function ForumPage() {
           <p className="font-sans text-text-secondary mb-4">
             No threads yet. Start one.
           </p>
-          <Button 
+          <Button
             variant="ghost"
             asChild
             className="font-sans text-text-muted hover:text-text-primary"

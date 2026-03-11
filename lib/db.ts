@@ -6,6 +6,7 @@ export type Profile = {
   display_name: string | null
   bio: string | null
   avatar_url: string | null
+  is_admin: boolean
   created_at: string
   updated_at: string
 }
@@ -50,6 +51,7 @@ export type Thread = {
   user_id: string
   title: string | null
   body: string
+  is_sticky: boolean
   reply_count: number
   last_reply_by: string | null
   last_reply_at: string | null
@@ -334,6 +336,7 @@ export async function getThreads() {
       profiles:user_id (id, username, display_name, avatar_url),
       last_reply_profile:last_reply_by (id, username, display_name)
     `)
+    .order('is_sticky', { ascending: false })
     .order('created_at', { ascending: false })
 
   if (error) throw error
