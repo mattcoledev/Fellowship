@@ -5,7 +5,7 @@ import { CommentThread } from '@/components/comments/CommentThread'
 import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer'
 import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-import { Avatar } from '@/components/ui/Avatar'
+import { Avatar } from '@/components/ui/avatar'
 
 interface PostDetailPageProps {
   params: Promise<{ slug: string }>

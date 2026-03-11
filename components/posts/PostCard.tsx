@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import { Avatar } from '@/components/ui/Avatar'
+import { Avatar } from '@/components/ui/avatar'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 

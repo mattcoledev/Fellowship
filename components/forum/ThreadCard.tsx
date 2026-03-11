@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { MessageCircle, Pin, Trash2 } from 'lucide-react'
 import { Thread, Profile, updateThread, deleteThread } from '@/lib/db-client'
 import { formatDistanceToNow } from 'date-fns'
-import { Avatar } from '@/components/ui/Avatar'
+import { Avatar } from '@/components/ui/avatar'
 
 interface ThreadCardProps {
   thread: Thread & {

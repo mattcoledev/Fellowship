@@ -11,7 +11,7 @@ import { MarkdownToolbar } from '@/components/editor/MarkdownToolbar'
 import { ReplyCompose } from './ReplyCompose'
 import { ReplyList } from './ReplyList'
 import { formatDistanceToNow } from 'date-fns'
-import { Avatar } from '@/components/ui/Avatar'
+import { Avatar } from '@/components/ui/avatar'
 
 interface ThreadDetailProps {
   thread: Thread & { profiles: Profile }

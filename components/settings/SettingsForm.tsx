@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Profile, updateProfile } from '@/lib/db-client'
 import { signOut } from '@/lib/auth-actions'
 import { createClient } from '@/lib/supabase/client'
-import { Avatar } from '@/components/ui/Avatar'
+import { Avatar } from '@/components/ui/avatar'
 
 interface SettingsFormProps {
   profile: Profile

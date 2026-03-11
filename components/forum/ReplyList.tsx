@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Reply, Profile, updateReply } from '@/lib/db-client'
 import { Button } from '@/components/ui/button'
 import { formatDistanceToNow } from 'date-fns'
-import { Avatar } from '@/components/ui/Avatar'
+import { Avatar } from '@/components/ui/avatar'
 import Link from 'next/link'
 
 interface ReplyItemProps {

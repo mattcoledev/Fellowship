@@ -4,7 +4,7 @@ import { getProfileByUsername, getUserPublishedPosts } from '@/lib/db'
 import { createClient } from '@/lib/supabase/server'
 import { PostCard } from '@/components/posts/PostCard'
 import { Button } from '@/components/ui/button'
-import { Avatar } from '@/components/ui/Avatar'
+import { Avatar } from '@/components/ui/avatar'
 
 interface AuthorProfilePageProps {
   params: Promise<{ username: string }>

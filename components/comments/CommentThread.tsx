@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Comment, Profile, createComment, updateComment } from '@/lib/db-client'
-import { Avatar } from '@/components/ui/Avatar'
+import { Avatar } from '@/components/ui/avatar'
 
 interface CommentThreadProps {
   comments: (Comment & { profiles: Profile })[]
