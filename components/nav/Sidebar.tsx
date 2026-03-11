@@ -15,7 +15,6 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { signOut } from '@/lib/auth-actions'
-import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 interface SidebarProps {
   username?: string
@@ -46,16 +45,13 @@ export function Sidebar({ username }: SidebarProps) {
         <Link href="/room" className="font-serif text-xl text-text-primary">
           The Fellowship
         </Link>
-        <div className="flex items-center gap-2">
-          <NotificationBell />
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-raised rounded-md transition-colors"
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-raised rounded-md transition-colors"
+          aria-label="Toggle menu"
+        >
+          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
       </header>
 
       {/* Mobile overlay */}
