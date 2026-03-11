@@ -1,14 +1,17 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Comment, Profile, createComment, updateComment } from '@/lib/db-client'
+import { Avatar } from '@/components/ui/Avatar'
 
 interface CommentThreadProps {
   comments: (Comment & { profiles: Profile })[]
   postId: string
   currentUserId?: string
+  currentUserProfile?: Profile | null
 }
 
 interface CommentItemProps {
@@ -93,17 +96,16 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }:
   return (
     <div className={depth > 0 ? 'ml-8' : ''}>
       <div className="flex gap-3">
-        {/* Avatar */}
-        <div className="w-8 h-8 rounded-full bg-accent-subtle text-accent-blue flex items-center justify-center text-sm font-medium flex-shrink-0">
-          {(author?.display_name || author?.username || 'A').charAt(0).toUpperCase()}
-        </div>
+        <Link href={`/author/${author?.username}`}>
+          <Avatar url={author?.avatar_url} name={author?.display_name || author?.username} size="lg" />
+        </Link>
 
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center gap-2">
-            <span className="font-sans text-sm font-medium text-text-primary">
+            <Link href={`/author/${author?.username}`} className="font-sans text-sm font-medium text-text-primary hover:text-accent-blue transition-colors">
               {author?.display_name || author?.username}
-            </span>
+            </Link>
             <span className="font-sans text-xs text-text-muted">
               {formatRelativeDate(comment.created_at)}
             </span>
@@ -221,7 +223,7 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }:
   )
 }
 
-export function CommentThread({ comments, postId, currentUserId }: CommentThreadProps) {
+export function CommentThread({ comments, postId, currentUserId, currentUserProfile }: CommentThreadProps) {
   const router = useRouter()
   const [newComment, setNewComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -260,9 +262,7 @@ export function CommentThread({ comments, postId, currentUserId }: CommentThread
       {currentUserId ? (
         <form onSubmit={handleSubmit} className="mt-6">
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-accent-subtle text-accent-blue flex items-center justify-center text-sm font-medium flex-shrink-0">
-              U
-            </div>
+            <Avatar url={currentUserProfile?.avatar_url} name={currentUserProfile?.display_name || currentUserProfile?.username} size="lg" />
             <div className="flex-1">
               <textarea
                 value={newComment}

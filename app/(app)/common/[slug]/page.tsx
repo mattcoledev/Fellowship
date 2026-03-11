@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getPostBySlug, getPostComments } from '@/lib/db'
+import { getPostBySlug, getPostComments, getProfileById } from '@/lib/db'
 import { CommentThread } from '@/components/comments/CommentThread'
 import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer'
 import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { Avatar } from '@/components/ui/Avatar'
 
 interface PostDetailPageProps {
   params: Promise<{ slug: string }>
@@ -42,7 +43,10 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
     notFound()
   }
 
-  const comments = await getPostComments(post.id)
+  const [comments, currentUserProfile] = await Promise.all([
+    getPostComments(post.id),
+    user ? getProfileById(user.id) : Promise.resolve(null),
+  ])
   const author = post.profiles
 
   return (
@@ -70,11 +74,11 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
         {/* Author line */}
         <div className="mt-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-accent-subtle text-accent-blue flex items-center justify-center text-sm font-medium">
-            {(author?.display_name || author?.username || 'A').charAt(0).toUpperCase()}
-          </div>
+          <Link href={`/author/${author?.username}`}>
+            <Avatar url={author?.avatar_url} name={author?.display_name || author?.username} size="lg" />
+          </Link>
           <div className="flex items-center gap-2">
-            <Link 
+            <Link
               href={`/author/${author?.username}`}
               className="font-sans text-sm font-medium text-text-primary hover:text-accent-blue transition-colors"
             >
@@ -109,10 +113,11 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
       {/* Comments section */}
       <div className="mt-12 pt-8 border-t border-border">
-        <CommentThread 
-          comments={comments} 
-          postId={post.id} 
+        <CommentThread
+          comments={comments}
+          postId={post.id}
           currentUserId={user?.id}
+          currentUserProfile={currentUserProfile}
         />
       </div>
     </div>

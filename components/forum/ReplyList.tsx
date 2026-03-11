@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Reply, Profile, updateReply } from '@/lib/db-client'
 import { Button } from '@/components/ui/button'
 import { formatDistanceToNow } from 'date-fns'
+import { Avatar } from '@/components/ui/Avatar'
+import Link from 'next/link'
 
 interface ReplyItemProps {
   reply: Reply & { profiles: Profile }
@@ -51,14 +53,14 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId }: ReplyIte
   return (
     <div className={isNested ? 'ml-8' : ''}>
       <div className="flex gap-3">
-        <div className={`${isNested ? 'w-6 h-6' : 'w-7 h-7'} rounded-full bg-accent-subtle text-accent flex items-center justify-center text-xs font-medium flex-shrink-0`}>
-          {author?.display_name?.charAt(0).toUpperCase() || author?.username?.charAt(0).toUpperCase() || '?'}
-        </div>
+        <Link href={`/author/${author?.username}`}>
+          <Avatar url={author?.avatar_url} name={author?.display_name || author?.username} size={isNested ? 'sm' : 'md'} />
+        </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-sans text-sm font-bold text-text-primary">
+            <Link href={`/author/${author?.username}`} className="font-sans text-sm font-bold text-text-primary hover:text-accent-blue transition-colors">
               {author?.display_name || author?.username || 'Unknown'}
-            </span>
+            </Link>
             <span className="font-sans text-xs text-text-muted">
               {formatRelativeDate(reply.created_at)}
             </span>

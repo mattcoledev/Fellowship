@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { Avatar } from '@/components/ui/Avatar'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
@@ -80,11 +81,14 @@ export function PostCard({ post, variant = 'dashboard', commentCount = 0 }: Post
           {/* Top row: author + badge */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-accent-subtle text-accent-blue flex items-center justify-center text-sm font-medium">
-                {authorName.charAt(0).toUpperCase()}
-              </div>
+              <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/author/${post.profiles?.username}`) }} className="cursor-pointer">
+                <Avatar url={post.profiles?.avatar_url} name={authorName} size="lg" />
+              </span>
               <div className="flex items-center gap-2">
-                <span className="font-sans text-sm font-medium text-text-primary">
+                <span
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/author/${post.profiles?.username}`) }}
+                  className="font-sans text-sm font-medium text-text-primary hover:text-accent-blue transition-colors cursor-pointer"
+                >
                   {authorName}
                 </span>
                 <span className="text-xs text-text-muted">

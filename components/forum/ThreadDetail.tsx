@@ -11,6 +11,7 @@ import { MarkdownToolbar } from '@/components/editor/MarkdownToolbar'
 import { ReplyCompose } from './ReplyCompose'
 import { ReplyList } from './ReplyList'
 import { formatDistanceToNow } from 'date-fns'
+import { Avatar } from '@/components/ui/Avatar'
 
 interface ThreadDetailProps {
   thread: Thread & { profiles: Profile }
@@ -108,12 +109,12 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
       {/* Thread header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-full bg-accent-subtle text-accent flex items-center justify-center text-sm font-medium">
-            {author?.display_name?.charAt(0).toUpperCase() || author?.username?.charAt(0).toUpperCase() || '?'}
-          </div>
-          <span className="font-sans text-sm font-bold text-text-primary">
+          <Link href={`/author/${author?.username}`}>
+            <Avatar url={author?.avatar_url} name={author?.display_name || author?.username} size="lg" />
+          </Link>
+          <Link href={`/author/${author?.username}`} className="font-sans text-sm font-bold text-text-primary hover:text-accent-blue transition-colors">
             {author?.display_name || author?.username || 'Unknown'}
-          </span>
+          </Link>
           <span className="font-sans text-xs text-text-muted">
             {formatRelativeDate(thread.created_at)}
           </span>

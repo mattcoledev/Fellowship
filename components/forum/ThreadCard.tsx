@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { MessageCircle, Pin, Trash2 } from 'lucide-react'
 import { Thread, Profile, updateThread, deleteThread } from '@/lib/db-client'
 import { formatDistanceToNow } from 'date-fns'
+import { Avatar } from '@/components/ui/Avatar'
 
 interface ThreadCardProps {
   thread: Thread & {
@@ -54,10 +55,13 @@ export function ThreadCard({ thread, isAdmin = false }: ThreadCardProps) {
       <div className="bg-bg-surface border border-border rounded-lg px-5 py-4 hover:bg-bg-raised cursor-pointer transition-colors">
         {/* Top row: avatar, author, timestamp */}
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-7 h-7 rounded-full bg-accent-subtle text-accent flex items-center justify-center text-xs font-medium">
-            {author?.display_name?.charAt(0).toUpperCase() || author?.username?.charAt(0).toUpperCase() || '?'}
-          </div>
-          <span className="font-sans text-sm font-bold text-text-primary">
+          <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/author/${author?.username}`) }} className="cursor-pointer">
+            <Avatar url={author?.avatar_url} name={author?.display_name || author?.username} size="md" />
+          </span>
+          <span
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/author/${author?.username}`) }}
+            className="font-sans text-sm font-bold text-text-primary hover:text-accent-blue transition-colors cursor-pointer"
+          >
             {author?.display_name || author?.username || 'Unknown'}
           </span>
           <span className="font-sans text-xs text-text-muted">

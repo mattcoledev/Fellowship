@@ -4,6 +4,7 @@ import { getProfileByUsername, getUserPublishedPosts } from '@/lib/db'
 import { createClient } from '@/lib/supabase/server'
 import { PostCard } from '@/components/posts/PostCard'
 import { Button } from '@/components/ui/button'
+import { Avatar } from '@/components/ui/Avatar'
 
 interface AuthorProfilePageProps {
   params: Promise<{ username: string }>
@@ -44,10 +45,7 @@ export default async function AuthorProfilePage({ params }: AuthorProfilePagePro
         )}
 
         <div className="flex items-start gap-4">
-          {/* Avatar */}
-          <div className="w-16 h-16 rounded-full bg-accent-subtle text-accent-blue flex items-center justify-center text-xl font-medium flex-shrink-0">
-            {(profile.display_name || profile.username).charAt(0).toUpperCase()}
-          </div>
+          <Avatar url={profile.avatar_url} name={profile.display_name || profile.username} size="lg" className="w-16 h-16 text-xl" />
 
           <div>
             {/* Name */}

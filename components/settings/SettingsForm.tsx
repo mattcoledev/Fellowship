@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Profile, updateProfile } from '@/lib/db-client'
 import { signOut } from '@/lib/auth-actions'
+import { createClient } from '@/lib/supabase/client'
+import { Avatar } from '@/components/ui/Avatar'
 
 interface SettingsFormProps {
   profile: Profile
@@ -18,8 +20,36 @@ export function SettingsForm({ profile, email }: SettingsFormProps) {
   const [bio, setBio] = useState(profile.bio || '')
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || '')
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
 
   const maxBioLength = 280
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIsUploadingAvatar(true)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop()
+      const path = `${profile.id}/avatar.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true })
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(path)
+      await updateProfile(profile.id, { avatar_url: publicUrl })
+      setAvatarUrl(publicUrl)
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to upload avatar:', error)
+      setMessage({ type: 'error', text: 'Failed to upload image. Please try again.' })
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -70,6 +100,32 @@ export function SettingsForm({ profile, email }: SettingsFormProps) {
         </h2>
 
         <form onSubmit={handleSave} className="space-y-4">
+          {/* Avatar */}
+          <div className="flex items-center gap-4">
+            <Avatar url={avatarUrl} name={displayName || profile.username} size="lg" className="w-16 h-16 text-lg" />
+            <div>
+              <label
+                htmlFor="avatar"
+                className={`inline-block font-sans text-sm px-3 py-1.5 rounded-md border border-border cursor-pointer transition-colors ${
+                  isUploadingAvatar
+                    ? 'text-text-muted bg-bg-raised cursor-not-allowed'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-raised'
+                }`}
+              >
+                {isUploadingAvatar ? 'Uploading...' : 'Change photo'}
+              </label>
+              <input
+                id="avatar"
+                type="file"
+                accept="image/*"
+                disabled={isUploadingAvatar}
+                onChange={handleAvatarUpload}
+                className="sr-only"
+              />
+              <p className="mt-1 font-sans text-xs text-text-muted">JPG, PNG or GIF</p>
+            </div>
+          </div>
+
           {/* Username (read-only) */}
           <div className="space-y-2">
             <label 
