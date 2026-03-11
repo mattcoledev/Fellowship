@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { signOut } from '@/lib/auth-actions'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 interface SidebarProps {
   username?: string
@@ -45,13 +46,16 @@ export function Sidebar({ username }: SidebarProps) {
         <Link href="/room" className="font-serif text-xl text-text-primary">
           The Fellowship
         </Link>
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-raised rounded-md transition-colors"
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-raised rounded-md transition-colors"
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </header>
 
       {/* Mobile overlay */}
@@ -69,10 +73,13 @@ export function Sidebar({ username }: SidebarProps) {
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Brand */}
-        <div className="p-6 lg:pt-6 pt-20">
+        <div className="p-6 lg:pt-6 pt-20 flex items-center justify-between">
           <Link href="/room" className="font-serif text-2xl text-text-primary">
             The Fellowship
           </Link>
+          <div className="hidden lg:block">
+            <NotificationBell />
+          </div>
         </div>
 
         {/* Divider */}
