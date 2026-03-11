@@ -1,22 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { 
-  ArrowLeft, 
-  Bold, 
-  Italic, 
-  Heading2, 
-  Heading3, 
-  Quote, 
-  List, 
-  ListOrdered,
-  Minus,
-  Link as LinkIcon,
-  X
-} from 'lucide-react'
+import { ArrowLeft, X } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { Post, createPost, updatePost } from '@/lib/db-client'
+import { MarkdownToolbar } from '@/components/editor/MarkdownToolbar'
 
 interface PostEditorProps {
   post?: Post
@@ -47,20 +36,9 @@ const visibilityOptions: { value: PostStatus; label: string }[] = [
   { value: 'published', label: 'Publish to Group' },
 ]
 
-const toolbarButtons = [
-  { icon: Bold, label: 'Bold' },
-  { icon: Italic, label: 'Italic' },
-  { icon: Heading2, label: 'Heading 2' },
-  { icon: Heading3, label: 'Heading 3' },
-  { icon: Quote, label: 'Blockquote' },
-  { icon: List, label: 'Bullet List' },
-  { icon: ListOrdered, label: 'Numbered List' },
-  { icon: Minus, label: 'Horizontal Rule' },
-  { icon: LinkIcon, label: 'Link' },
-]
-
 export function PostEditor({ post, userId }: PostEditorProps) {
   const router = useRouter()
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [postId, setPostId] = useState<string | null>(post?.id || null)
   const [title, setTitle] = useState(post?.title || '')
   const [content, setContent] = useState(post?.content || '')
@@ -319,20 +297,15 @@ export function PostEditor({ post, userId }: PostEditorProps) {
         <div className="my-6 border-t border-border" />
 
         {/* Toolbar */}
-        <div className="flex items-center gap-1 mb-4">
-          {toolbarButtons.map((button) => (
-            <button
-              key={button.label}
-              title={button.label}
-              className="p-2 text-text-secondary hover:text-text-primary transition-colors rounded-md hover:bg-bg-raised"
-            >
-              <button.icon className="w-4 h-4" />
-            </button>
-          ))}
-        </div>
+        <MarkdownToolbar
+          textareaRef={textareaRef}
+          onChange={(v) => { setContent(v); markUnsaved() }}
+          className="mb-4"
+        />
 
         {/* Content area */}
         <textarea
+          ref={textareaRef}
           value={content}
           onChange={handleContentChange}
           placeholder="Start writing..."

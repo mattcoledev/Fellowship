@@ -75,9 +75,20 @@ export function ThreadCard({ thread, isAdmin = false }: ThreadCardProps) {
           </h3>
         )}
 
-        {/* Body preview */}
+        {/* Body preview — strip markdown syntax for clean plain-text snippet */}
         <p className="font-sans text-sm text-text-secondary line-clamp-2 mb-3">
-          {thread.body}
+          {thread.body
+            .replace(/^#{1,6}\s+/gm, '')       // headings
+            .replace(/\*\*(.+?)\*\*/g, '$1')    // bold
+            .replace(/\*(.+?)\*/g, '$1')         // italic
+            .replace(/`(.+?)`/g, '$1')           // inline code
+            .replace(/^>\s+/gm, '')              // blockquotes
+            .replace(/^[-*+]\s+/gm, '')          // unordered lists
+            .replace(/^\d+\.\s+/gm, '')          // ordered lists
+            .replace(/\[(.+?)\]\(.+?\)/g, '$1')  // links → keep label
+            .replace(/^---+$/gm, '')             // hr
+            .trim()
+          }
         </p>
 
         {/* Footer row */}

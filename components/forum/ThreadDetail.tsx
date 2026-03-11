@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Thread, Reply, Profile, createReply, deleteThread } from '@/lib/db-client'
+import { Thread, Reply, Profile, createReply, deleteThread, updateThread } from '@/lib/db-client'
+import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer'
+import { MarkdownToolbar } from '@/components/editor/MarkdownToolbar'
 import { ReplyCompose } from './ReplyCompose'
 import { ReplyList } from './ReplyList'
 import { formatDistanceToNow } from 'date-fns'
@@ -25,6 +27,11 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
   const router = useRouter()
   const [replies, setReplies] = useState(initialReplies)
   const [replyTo, setReplyTo] = useState<{ username: string; replyId: string | null } | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editBody, setEditBody] = useState(thread.body)
+  const [displayBody, setDisplayBody] = useState(thread.body)
+  const [isSaving, setIsSaving] = useState(false)
+  const editRef = useRef<HTMLTextAreaElement>(null)
   const author = thread.profiles
 
   // Check if within 15 minutes of posting (for edit button)
@@ -32,6 +39,21 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
   const now = new Date()
   const minutesSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60)
   const canEdit = currentUserId === thread.user_id && minutesSinceCreation < 15
+
+  const handleSaveEdit = async () => {
+    if (!editBody.trim()) return
+    setIsSaving(true)
+    try {
+      await updateThread(thread.id, { body: editBody.trim() })
+      setDisplayBody(editBody.trim())
+      setIsEditing(false)
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to update thread:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const handleDelete = async () => {
     if (!confirm('Delete this thread and all its replies?')) return
@@ -96,10 +118,11 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
             {formatRelativeDate(thread.created_at)}
           </span>
           <div className="ml-auto flex items-center gap-1">
-            {canEdit && (
+            {canEdit && !isEditing && (
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => setIsEditing(true)}
                 className="font-sans text-xs text-text-muted hover:text-text-primary h-auto py-1 px-2"
               >
                 Edit
@@ -125,9 +148,38 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
           </h1>
         )}
 
-        <p className="font-sans text-base text-text-primary leading-relaxed whitespace-pre-wrap">
-          {thread.body}
-        </p>
+        {isEditing ? (
+          <div className="space-y-2">
+            <MarkdownToolbar textareaRef={editRef} onChange={setEditBody} className="mb-1" />
+            <textarea
+              ref={editRef}
+              value={editBody}
+              onChange={(e) => setEditBody(e.target.value)}
+              className="w-full bg-bg-surface border border-border rounded-md p-3 text-sm text-text-primary placeholder:text-text-muted resize-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30 outline-none font-sans"
+              rows={6}
+            />
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSaveEdit}
+                disabled={isSaving || !editBody.trim()}
+                size="sm"
+                className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium text-xs"
+              >
+                {isSaving ? 'Saving...' : 'Save'}
+              </Button>
+              <Button
+                onClick={() => { setEditBody(displayBody); setIsEditing(false) }}
+                variant="ghost"
+                size="sm"
+                className="text-text-secondary hover:text-text-primary hover:bg-bg-raised font-sans text-xs"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <MarkdownRenderer content={displayBody} variant="forum" />
+        )}
       </div>
 
       {/* Divider */}

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPostBySlug, getPostComments } from '@/lib/db'
 import { CommentThread } from '@/components/comments/CommentThread'
+import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer'
 import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
@@ -45,7 +46,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const author = post.profiles
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8">
+    <div className="max-w-[860px] mx-auto px-6 py-8">
       {/* Back link */}
       <Link 
         href="/common" 
@@ -63,7 +64,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
         </span>
 
         {/* Title */}
-        <h1 className="mt-3 font-serif text-3xl text-text-primary">
+        <h1 className="mt-3 mb-2 font-serif text-3xl text-text-primary">
           {post.title}
         </h1>
 
@@ -104,11 +105,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
       <div className="my-8 border-t border-border" />
 
       {/* Post body */}
-      <article className="prose-reading">
-        {post.content?.split('\n\n').map((paragraph, index) => (
-          <p key={index}>{paragraph}</p>
-        ))}
-      </article>
+      <MarkdownRenderer content={post.content ?? ''} variant="prose" />
 
       {/* Comments section */}
       <div className="mt-12 pt-8 border-t border-border">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { createThread } from '@/lib/db-client'
 import { createClient } from '@/lib/supabase/client'
+import { MarkdownToolbar } from '@/components/editor/MarkdownToolbar'
 
 export default function NewThreadPage() {
   const router = useRouter()
@@ -16,6 +17,7 @@ export default function NewThreadPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const bodyRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     const getUser = async () => {
@@ -89,14 +91,20 @@ export default function NewThreadPage() {
 
           {/* Body field */}
           <div>
-            <label 
-              htmlFor="body" 
+            <label
+              htmlFor="body"
               className="block font-sans text-sm text-text-secondary mb-2"
             >
               {"What's on your mind?"}
             </label>
+            <MarkdownToolbar
+              textareaRef={bodyRef}
+              onChange={setBody}
+              className="mb-2"
+            />
             <Textarea
               id="body"
+              ref={bodyRef}
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Start a thread..."
