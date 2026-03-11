@@ -65,6 +65,22 @@ export type Reply = {
   profiles?: Profile
 }
 
+export type Notification = {
+  id: string
+  user_id: string
+  actor_id: string
+  type: 'post_reply' | 'comment_reply' | 'thread_reply' | 'forum_reply'
+  post_id: string | null
+  thread_id: string | null
+  comment_id: string | null
+  reply_id: string | null
+  read: boolean
+  created_at: string
+  actor?: Profile
+  post?: { title: string; slug: string }
+  thread?: { title: string | null; body: string }
+}
+
 // Client-side post operations
 export async function createPost(post: {
   user_id: string
@@ -247,6 +263,55 @@ export async function deleteReply(id: string) {
     .from('replies')
     .delete()
     .eq('id', id)
+
+  if (error) throw error
+}
+
+// Notifications (client-side)
+export async function getNotifications(limit = 10) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('notifications')
+    .select(`
+      *,
+      actor:actor_id (id, username, display_name, avatar_url),
+      post:post_id (title, slug),
+      thread:thread_id (title, body)
+    `)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return data as Notification[]
+}
+
+export async function getUnreadCount() {
+  const supabase = createClient()
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('read', false)
+
+  if (error) throw error
+  return count || 0
+}
+
+export async function markNotificationRead(id: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+export async function markAllNotificationsRead() {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('read', false)
 
   if (error) throw error
 }

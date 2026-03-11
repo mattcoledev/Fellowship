@@ -70,6 +70,22 @@ export type Reply = {
   profiles?: Profile
 }
 
+export type Notification = {
+  id: string
+  user_id: string
+  actor_id: string
+  type: 'post_reply' | 'comment_reply' | 'thread_reply' | 'forum_reply'
+  post_id: string | null
+  thread_id: string | null
+  comment_id: string | null
+  reply_id: string | null
+  read: boolean
+  created_at: string
+  actor?: Profile
+  post?: { title: string; slug: string }
+  thread?: { title: string | null; body: string }
+}
+
 // Posts
 export async function getUserPosts(userId: string) {
   const supabase = await createClient()
@@ -353,4 +369,35 @@ export async function getThreadReplies(threadId: string) {
 
   if (error) throw error
   return data as (Reply & { profiles: Profile })[]
+}
+
+// Notifications
+export async function getUserNotifications(userId: string, limit = 10) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('notifications')
+    .select(`
+      *,
+      actor:actor_id (id, username, display_name, avatar_url),
+      post:post_id (title, slug),
+      thread:thread_id (title, body)
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return data as Notification[]
+}
+
+export async function getUnreadNotificationCount(userId: string) {
+  const supabase = await createClient()
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('read', false)
+
+  if (error) throw error
+  return count || 0
 }
