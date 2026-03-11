@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { ThreadDetail } from '@/components/forum/ThreadDetail'
-import { getThreadById, getThreadReplies } from '@/lib/db'
+import { getThreadById, getThreadReplies, getThreadLikeData, getReplyLikesData } from '@/lib/db'
 import { createClient } from '@/lib/supabase/server'
 
 interface ThreadPageProps {
@@ -24,8 +24,17 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
   }
 
   try {
-    const thread = await getThreadById(id)
-    const replies = await getThreadReplies(id)
+    const [thread, replies] = await Promise.all([
+      getThreadById(id),
+      getThreadReplies(id),
+    ])
+
+    const replyIds = replies.map(r => r.id)
+
+    const [threadLikeData, replyLikesData] = await Promise.all([
+      getThreadLikeData(id, user?.id),
+      getReplyLikesData(replyIds, user?.id),
+    ])
 
     return (
       <ThreadDetail
@@ -33,6 +42,9 @@ export default async function ThreadPage({ params }: ThreadPageProps) {
         replies={replies}
         currentUserId={user?.id || null}
         isAdmin={isAdmin}
+        threadLikeCount={threadLikeData.count}
+        threadUserLiked={threadLikeData.liked}
+        replyLikesData={replyLikesData}
       />
     )
   } catch {

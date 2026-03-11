@@ -6,44 +6,72 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
+import { resolveUsernameToEmail } from '@/lib/auth-actions'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
+  const resolveEmail = async (): Promise<string | null> => {
+    const trimmed = identifier.trim()
+    if (trimmed.includes('@')) return trimmed
+
+    // It's a username — look up the email server-side
+    const email = await resolveUsernameToEmail(trimmed)
+    if (!email) {
+      setError('No account found with that username.')
+      return null
+    }
+    return email
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
-    
+
+    const email = await resolveEmail()
+    if (!email) {
+      setIsLoading(false)
+      return
+    }
+
     const supabase = createClient()
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
-    
+
     if (signInError) {
       setError(signInError.message)
       setIsLoading(false)
       return
     }
-    
+
     router.push('/common')
     router.refresh()
   }
 
   const handleMagicLink = async () => {
-    if (!email) {
-      setError('Please enter your email first')
+    const trimmed = identifier.trim()
+    if (!trimmed) {
+      setError('Please enter your email or username first')
       return
     }
+
     setIsLoading(true)
     setError(null)
-    
+
+    const email = await resolveEmail()
+    if (!email) {
+      setIsLoading(false)
+      return
+    }
+
     const supabase = createClient()
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email,
@@ -51,7 +79,7 @@ export default function LoginPage() {
         emailRedirectTo: `${window.location.origin}/common`,
       },
     })
-    
+
     if (otpError) {
       setError(otpError.message)
     } else {
@@ -81,26 +109,26 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="space-y-2">
-            <label 
-              htmlFor="email" 
+            <label
+              htmlFor="identifier"
               className="font-sans text-sm text-text-secondary"
             >
-              Email
+              Email or Username
             </label>
             <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="identifier"
+              type="text"
+              placeholder="you@example.com or yourUsername"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
               className="w-full bg-bg-surface border-border text-text-primary placeholder:text-text-muted focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30"
             />
           </div>
 
           <div className="space-y-2">
-            <label 
-              htmlFor="password" 
+            <label
+              htmlFor="password"
               className="font-sans text-sm text-text-secondary"
             >
               Password
@@ -116,8 +144,8 @@ export default function LoginPage() {
             />
           </div>
 
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={isLoading}
             className="w-full bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
           >
@@ -125,7 +153,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <Button 
+        <Button
           type="button"
           variant="ghost"
           onClick={handleMagicLink}

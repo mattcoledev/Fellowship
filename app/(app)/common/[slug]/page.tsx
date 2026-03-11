@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getPostBySlug, getPostComments, getProfileById } from '@/lib/db'
+import { getPostBySlug, getPostComments, getProfileById, getLikeCount, hasUserLiked, getCommentLikesData } from '@/lib/db'
 import { CommentThread } from '@/components/comments/CommentThread'
 import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer'
+import { LikeButton } from '@/components/ui/LikeButton'
 import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Avatar } from '@/components/ui/avatar'
@@ -20,10 +21,10 @@ const typeLabels: Record<string, string> = {
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { 
-    month: 'long', 
-    day: 'numeric', 
-    year: 'numeric' 
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
   })
 }
 
@@ -31,7 +32,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const { slug } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   let post
   try {
     post = await getPostBySlug(slug)
@@ -43,17 +44,23 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
     notFound()
   }
 
-  const [comments, currentUserProfile] = await Promise.all([
+  const [comments, currentUserProfile, postLikeCount, postUserLiked] = await Promise.all([
     getPostComments(post.id),
     user ? getProfileById(user.id) : Promise.resolve(null),
+    getLikeCount(post.id),
+    user ? hasUserLiked(post.id, user.id) : Promise.resolve(false),
   ])
+
+  const commentIds = comments.map(c => c.id)
+  const commentLikesData = await getCommentLikesData(commentIds, user?.id)
+
   const author = post.profiles
 
   return (
     <div className="max-w-[860px] mx-auto px-6 py-8">
       {/* Back link */}
-      <Link 
-        href="/common" 
+      <Link
+        href="/common"
         className="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors font-sans"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -94,7 +101,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
         {post.tags && post.tags.length > 0 && (
           <div className="mt-4 flex items-center gap-2">
             {post.tags.map((tag) => (
-              <span 
+              <span
                 key={tag}
                 className="bg-accent-subtle text-accent-blue text-xs font-medium px-2 py-0.5 rounded"
               >
@@ -111,13 +118,25 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
       {/* Post body */}
       <MarkdownRenderer content={post.content ?? ''} variant="prose" />
 
+      {/* Post like */}
+      <div className="mt-8 flex items-center gap-2">
+        <LikeButton
+          contentType="post"
+          contentId={post.id}
+          initialCount={postLikeCount}
+          initialLiked={postUserLiked}
+          currentUserId={user?.id}
+        />
+      </div>
+
       {/* Comments section */}
-      <div className="mt-12 pt-8 border-t border-border">
+      <div className="mt-8 pt-8 border-t border-border">
         <CommentThread
           comments={comments}
           postId={post.id}
           currentUserId={user?.id}
           currentUserProfile={currentUserProfile}
+          commentLikesData={commentLikesData}
         />
       </div>
     </div>

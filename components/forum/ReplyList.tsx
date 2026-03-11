@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Reply, Profile, updateReply } from '@/lib/db-client'
 import { Button } from '@/components/ui/button'
+import { LikeButton } from '@/components/ui/LikeButton'
 import { formatDistanceToNow } from 'date-fns'
 import { Avatar } from '@/components/ui/avatar'
 import Link from 'next/link'
@@ -13,13 +14,15 @@ interface ReplyItemProps {
   onReply: (username: string, replyId: string | null) => void
   isNested?: boolean
   currentUserId: string | null
+  likeCount: number
+  userLiked: boolean
 }
 
 function formatRelativeDate(dateString: string) {
   return formatDistanceToNow(new Date(dateString), { addSuffix: true })
 }
 
-function ReplyItem({ reply, onReply, isNested = false, currentUserId }: ReplyItemProps) {
+function ReplyItem({ reply, onReply, isNested = false, currentUserId, likeCount, userLiked }: ReplyItemProps) {
   const router = useRouter()
   const author = reply.profiles
   const isOwner = currentUserId === reply.user_id
@@ -68,7 +71,7 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId }: ReplyIte
               <span className="font-sans text-xs text-text-muted">(edited)</span>
             )}
           </div>
-          
+
           {isEditing ? (
             <div className="space-y-2">
               <textarea
@@ -102,6 +105,13 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId }: ReplyIte
                 {displayContent}
               </p>
               <div className="flex items-center gap-3">
+                <LikeButton
+                  contentType="reply"
+                  contentId={reply.id}
+                  initialCount={likeCount}
+                  initialLiked={userLiked}
+                  currentUserId={currentUserId}
+                />
                 {currentUserId && (
                   <button
                     onClick={() => onReply(author?.username || '', reply.id)}
@@ -131,10 +141,10 @@ interface ReplyListProps {
   replies: (Reply & { profiles: Profile })[]
   onReply: (username: string, replyId: string | null) => void
   currentUserId: string | null
+  likesData: Record<string, { count: number; liked: boolean }>
 }
 
-export function ReplyList({ replies, onReply, currentUserId }: ReplyListProps) {
-  // Group replies: top-level and nested
+export function ReplyList({ replies, onReply, currentUserId, likesData }: ReplyListProps) {
   const topLevelReplies = replies.filter(r => !r.parent_id)
   const nestedReplies = replies.filter(r => r.parent_id)
 
@@ -142,16 +152,33 @@ export function ReplyList({ replies, onReply, currentUserId }: ReplyListProps) {
     <div className="space-y-0">
       {topLevelReplies.map((reply, index) => {
         const children = nestedReplies.filter(r => r.parent_id === reply.id)
+        const like = likesData[reply.id] || { count: 0, liked: false }
 
         return (
           <div key={reply.id}>
             {index > 0 && <div className="border-t border-border my-4" />}
-            <ReplyItem reply={reply} onReply={onReply} currentUserId={currentUserId} />
-            {children.map((child) => (
-              <div key={child.id} className="mt-3">
-                <ReplyItem reply={child} onReply={onReply} isNested currentUserId={currentUserId} />
-              </div>
-            ))}
+            <ReplyItem
+              reply={reply}
+              onReply={onReply}
+              currentUserId={currentUserId}
+              likeCount={like.count}
+              userLiked={like.liked}
+            />
+            {children.map((child) => {
+              const childLike = likesData[child.id] || { count: 0, liked: false }
+              return (
+                <div key={child.id} className="mt-3">
+                  <ReplyItem
+                    reply={child}
+                    onReply={onReply}
+                    isNested
+                    currentUserId={currentUserId}
+                    likeCount={childLike.count}
+                    userLiked={childLike.liked}
+                  />
+                </div>
+              )
+            })}
           </div>
         )
       })}

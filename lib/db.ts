@@ -275,6 +275,67 @@ export async function toggleLike(postId: string, userId: string) {
   }
 }
 
+// Comment likes
+export async function getCommentLikesData(
+  commentIds: string[],
+  userId?: string
+): Promise<Record<string, { count: number; liked: boolean }>> {
+  if (commentIds.length === 0) return {}
+  const supabase = await createClient()
+
+  const { data: rows } = await supabase
+    .from('comment_likes')
+    .select('comment_id, user_id')
+    .in('comment_id', commentIds)
+
+  const result: Record<string, { count: number; liked: boolean }> = {}
+  for (const id of commentIds) result[id] = { count: 0, liked: false }
+  for (const row of rows || []) {
+    result[row.comment_id].count++
+    if (userId && row.user_id === userId) result[row.comment_id].liked = true
+  }
+  return result
+}
+
+// Thread likes
+export async function getThreadLikeData(
+  threadId: string,
+  userId?: string
+): Promise<{ count: number; liked: boolean }> {
+  const supabase = await createClient()
+
+  const { data: rows } = await supabase
+    .from('thread_likes')
+    .select('user_id')
+    .eq('thread_id', threadId)
+
+  const count = rows?.length || 0
+  const liked = userId ? (rows || []).some(r => r.user_id === userId) : false
+  return { count, liked }
+}
+
+// Reply likes
+export async function getReplyLikesData(
+  replyIds: string[],
+  userId?: string
+): Promise<Record<string, { count: number; liked: boolean }>> {
+  if (replyIds.length === 0) return {}
+  const supabase = await createClient()
+
+  const { data: rows } = await supabase
+    .from('reply_likes')
+    .select('reply_id, user_id')
+    .in('reply_id', replyIds)
+
+  const result: Record<string, { count: number; liked: boolean }> = {}
+  for (const id of replyIds) result[id] = { count: 0, liked: false }
+  for (const row of rows || []) {
+    result[row.reply_id].count++
+    if (userId && row.user_id === userId) result[row.reply_id].liked = true
+  }
+  return result
+}
+
 // Profiles
 export async function getProfileByUsername(username: string) {
   const supabase = await createClient()

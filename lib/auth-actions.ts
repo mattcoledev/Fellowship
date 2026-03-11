@@ -1,7 +1,21 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
+
+export async function resolveUsernameToEmail(username: string): Promise<string | null> {
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('id')
+    .eq('username', username)
+    .single()
+
+  if (!profile) return null
+
+  const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(profile.id)
+  return user?.email ?? null
+}
 
 export async function signUp(formData: FormData) {
   const supabase = await createClient()

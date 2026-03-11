@@ -6,12 +6,14 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Comment, Profile, createComment, updateComment } from '@/lib/db-client'
 import { Avatar } from '@/components/ui/avatar'
+import { LikeButton } from '@/components/ui/LikeButton'
 
 interface CommentThreadProps {
   comments: (Comment & { profiles: Profile })[]
   postId: string
   currentUserId?: string
   currentUserProfile?: Profile | null
+  commentLikesData?: Record<string, { count: number; liked: boolean }>
 }
 
 interface CommentItemProps {
@@ -20,22 +22,25 @@ interface CommentItemProps {
   postId: string
   currentUserId?: string
   depth?: number
+  likeCount: number
+  userLiked: boolean
+  commentLikesData: Record<string, { count: number; liked: boolean }>
 }
 
 function formatRelativeDate(dateString: string): string {
   const date = new Date(dateString)
   const now = new Date()
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-  
+
   if (diffInSeconds < 60) return 'just now'
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
   if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
-  
+
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }: CommentItemProps) {
+function CommentItem({ comment, allComments, postId, currentUserId, depth = 0, likeCount, userLiked, commentLikesData }: CommentItemProps) {
   const router = useRouter()
   const [showReplyForm, setShowReplyForm] = useState(false)
   const [replyContent, setReplyContent] = useState('')
@@ -47,7 +52,7 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }:
   const [isSaving, setIsSaving] = useState(false)
   const author = comment.profiles
   const isOwner = currentUserId === comment.user_id
-  
+
   const replies = allComments.filter(c => c.parent_id === comment.id)
 
   const handleSubmitReply = async (e: React.FormEvent) => {
@@ -150,6 +155,13 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }:
 
               {/* Action buttons */}
               <div className="mt-2 flex items-center gap-3">
+                <LikeButton
+                  contentType="comment"
+                  contentId={comment.id}
+                  initialCount={likeCount}
+                  initialLiked={userLiked}
+                  currentUserId={currentUserId}
+                />
                 {currentUserId && (
                   <button
                     onClick={() => setShowReplyForm(!showReplyForm)}
@@ -207,28 +219,33 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0 }:
       {/* Replies */}
       {replies.length > 0 && (
         <div className="mt-4 space-y-4">
-          {replies.map((reply) => (
-            <CommentItem 
-              key={reply.id} 
-              comment={reply} 
-              allComments={allComments}
-              postId={postId}
-              currentUserId={currentUserId}
-              depth={depth + 1}
-            />
-          ))}
+          {replies.map((reply) => {
+            const replyLike = commentLikesData[reply.id] || { count: 0, liked: false }
+            return (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                allComments={allComments}
+                postId={postId}
+                currentUserId={currentUserId}
+                depth={depth + 1}
+                likeCount={replyLike.count}
+                userLiked={replyLike.liked}
+                commentLikesData={commentLikesData}
+              />
+            )
+          })}
         </div>
       )}
     </div>
   )
 }
 
-export function CommentThread({ comments, postId, currentUserId, currentUserProfile }: CommentThreadProps) {
+export function CommentThread({ comments, postId, currentUserId, currentUserProfile, commentLikesData = {} }: CommentThreadProps) {
   const router = useRouter()
   const [newComment, setNewComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Get top-level comments (no parent)
   const topLevelComments = comments.filter(c => !c.parent_id)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -291,15 +308,21 @@ export function CommentThread({ comments, postId, currentUserId, currentUserProf
 
       {/* Comments list */}
       <div className="mt-8 space-y-6">
-        {topLevelComments.map((comment) => (
-          <CommentItem 
-            key={comment.id} 
-            comment={comment} 
-            allComments={comments}
-            postId={postId}
-            currentUserId={currentUserId}
-          />
-        ))}
+        {topLevelComments.map((comment) => {
+          const like = commentLikesData[comment.id] || { count: 0, liked: false }
+          return (
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              allComments={comments}
+              postId={postId}
+              currentUserId={currentUserId}
+              likeCount={like.count}
+              userLiked={like.liked}
+              commentLikesData={commentLikesData}
+            />
+          )
+        })}
       </div>
     </div>
   )

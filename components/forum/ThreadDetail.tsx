@@ -10,6 +10,7 @@ import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer'
 import { MarkdownToolbar } from '@/components/editor/MarkdownToolbar'
 import { ReplyCompose } from './ReplyCompose'
 import { ReplyList } from './ReplyList'
+import { LikeButton } from '@/components/ui/LikeButton'
 import { formatDistanceToNow } from 'date-fns'
 import { Avatar } from '@/components/ui/avatar'
 
@@ -18,13 +19,16 @@ interface ThreadDetailProps {
   replies: (Reply & { profiles: Profile })[]
   currentUserId: string | null
   isAdmin?: boolean
+  threadLikeCount: number
+  threadUserLiked: boolean
+  replyLikesData: Record<string, { count: number; liked: boolean }>
 }
 
 function formatRelativeDate(dateString: string) {
   return formatDistanceToNow(new Date(dateString), { addSuffix: true })
 }
 
-export function ThreadDetail({ thread, replies: initialReplies, currentUserId, isAdmin = false }: ThreadDetailProps) {
+export function ThreadDetail({ thread, replies: initialReplies, currentUserId, isAdmin = false, threadLikeCount, threadUserLiked, replyLikesData }: ThreadDetailProps) {
   const router = useRouter()
   const [replies, setReplies] = useState(initialReplies)
   const [replyTo, setReplyTo] = useState<{ username: string; replyId: string | null } | null>(null)
@@ -81,7 +85,7 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
         content,
         parent_id: replyTo?.replyId || null,
       })
-      
+
       setReplies([...replies, newReply])
       setReplyTo(null)
       router.refresh()
@@ -91,15 +95,15 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
   }
 
   // Get current user's initial for the compose box
-  const currentUserInitial = replies.find(r => r.user_id === currentUserId)?.profiles?.display_name?.charAt(0).toUpperCase() 
+  const currentUserInitial = replies.find(r => r.user_id === currentUserId)?.profiles?.display_name?.charAt(0).toUpperCase()
     || replies.find(r => r.user_id === currentUserId)?.profiles?.username?.charAt(0).toUpperCase()
     || '?'
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8">
       {/* Back link */}
-      <Link 
-        href="/forum" 
+      <Link
+        href="/forum"
         className="inline-flex items-center gap-1.5 font-sans text-sm text-text-muted hover:text-text-primary transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -118,7 +122,14 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
           <span className="font-sans text-xs text-text-muted">
             {formatRelativeDate(thread.created_at)}
           </span>
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-2">
+            <LikeButton
+              contentType="thread"
+              contentId={thread.id}
+              initialCount={threadLikeCount}
+              initialLiked={threadUserLiked}
+              currentUserId={currentUserId}
+            />
             {canEdit && !isEditing && (
               <Button
                 variant="ghost"
@@ -189,8 +200,8 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
       {/* Reply compose */}
       {currentUserId ? (
         <div className="mb-8">
-          <ReplyCompose 
-            currentUserInitial={currentUserInitial} 
+          <ReplyCompose
+            currentUserInitial={currentUserInitial}
             replyTo={replyTo?.username || null}
             onClearReplyTo={() => setReplyTo(null)}
             onSubmit={handleSubmitReply}
@@ -206,10 +217,11 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
 
       {/* Replies list */}
       {replies.length > 0 && (
-        <ReplyList 
-          replies={replies} 
+        <ReplyList
+          replies={replies}
           onReply={handleReply}
           currentUserId={currentUserId}
+          likesData={replyLikesData}
         />
       )}
     </div>
