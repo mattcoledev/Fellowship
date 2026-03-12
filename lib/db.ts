@@ -18,6 +18,7 @@ export type Post = {
   content: string | null
   excerpt: string | null
   authors_note: string | null
+  read_next_ids: string[]
   post_type: 'essay' | 'poem' | 'fiction' | 'reflection'
   status: 'draft' | 'private' | 'published'
   tags: string[]
@@ -142,6 +143,20 @@ export async function getPostById(id: string) {
 
   if (error) throw error
   return data as Post
+}
+
+export async function getPostsByIds(ids: string[]): Promise<{ id: string; title: string; slug: string | null; post_type: string; tags: string[] }[]> {
+  if (ids.length === 0) return []
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('posts')
+    .select('id, title, slug, post_type, tags')
+    .in('id', ids)
+
+  if (error) throw error
+  // Return in the same order as the input IDs
+  const map = Object.fromEntries((data || []).map(p => [p.id, p]))
+  return ids.map(id => map[id]).filter(Boolean)
 }
 
 export async function createPost(post: {

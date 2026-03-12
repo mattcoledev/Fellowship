@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getPostBySlug, getPostComments, getProfileById, getLikeCount, hasUserLiked, getCommentLikesData } from '@/lib/db'
+import { getPostBySlug, getPostComments, getProfileById, getLikeCount, hasUserLiked, getCommentLikesData, getPostsByIds } from '@/lib/db'
 import { CommentThread } from '@/components/comments/CommentThread'
 import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer'
 import { LikeButton } from '@/components/ui/LikeButton'
+import { ReadNext } from '@/components/posts/ReadNext'
 import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Avatar } from '@/components/ui/avatar'
@@ -54,11 +55,12 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
     notFound()
   }
 
-  const [comments, currentUserProfile, postLikeCount, postUserLiked] = await Promise.all([
+  const [comments, currentUserProfile, postLikeCount, postUserLiked, readNextPosts] = await Promise.all([
     getPostComments(post.id),
     user ? getProfileById(user.id) : Promise.resolve(null),
     getLikeCount(post.id),
     user ? hasUserLiked(post.id, user.id) : Promise.resolve(false),
+    post.read_next_ids?.length ? getPostsByIds(post.read_next_ids) : Promise.resolve([]),
   ])
 
   const commentIds = comments.map(c => c.id)
@@ -148,6 +150,9 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
           currentUserId={user?.id}
         />
       </div>
+
+      {/* Read Next */}
+      <ReadNext posts={readNextPosts} />
 
       {/* Comments section */}
       <div className="mt-8 pt-8 border-t border-border">

@@ -14,10 +14,14 @@ import {
 import { cn } from '@/lib/utils'
 import { Post, createPost, updatePost } from '@/lib/db-client'
 import { MarkdownToolbar } from '@/components/editor/MarkdownToolbar'
+import { searchPostsForReadNext } from '@/lib/post-actions'
+
+type ReadNextPost = { id: string; title: string; slug: string | null; post_type: string; tags: string[] }
 
 interface PostEditorProps {
   post?: Post
   userId: string
+  readNextPosts?: ReadNextPost[]
 }
 
 type PostType = 'essay' | 'poem' | 'fiction' | 'reflection'
@@ -36,7 +40,7 @@ const visibilityOptions: { value: PostStatus; label: string }[] = [
   { value: 'published', label: 'Publish to Group' },
 ]
 
-export function PostEditor({ post, userId }: PostEditorProps) {
+export function PostEditor({ post, userId, readNextPosts: initialReadNextPosts = [] }: PostEditorProps) {
   const router = useRouter()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [postId, setPostId] = useState<string | null>(post?.id || null)
@@ -50,6 +54,15 @@ export function PostEditor({ post, userId }: PostEditorProps) {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('saved')
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
+  // Read Next state
+  const [readNextIds, setReadNextIds] = useState<string[]>(post?.read_next_ids || [])
+  const [readNextPosts, setReadNextPosts] = useState<ReadNextPost[]>(initialReadNextPosts)
+  const [readNextQuery, setReadNextQuery] = useState('')
+  const [readNextShowAll, setReadNextShowAll] = useState(false)
+  const [readNextResults, setReadNextResults] = useState<ReadNextPost[]>([])
+  const [readNextSearching, setReadNextSearching] = useState(false)
+  const readNextSearchRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // Calculate word count
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0
 
@@ -57,6 +70,35 @@ export function PostEditor({ post, userId }: PostEditorProps) {
   const generateExcerpt = (text: string) => {
     const plainText = text.replace(/[#*_~`]/g, '').trim()
     return plainText.length > 200 ? plainText.substring(0, 200) + '...' : plainText
+  }
+
+  // Read Next search effect
+  useEffect(() => {
+    if (readNextSearchRef.current) clearTimeout(readNextSearchRef.current)
+    readNextSearchRef.current = setTimeout(async () => {
+      setReadNextSearching(true)
+      try {
+        const results = await searchPostsForReadNext(readNextQuery, userId, readNextShowAll)
+        setReadNextResults(results.filter(r => r.id !== postId && !readNextIds.includes(r.id)))
+      } finally {
+        setReadNextSearching(false)
+      }
+    }, 300)
+    return () => { if (readNextSearchRef.current) clearTimeout(readNextSearchRef.current) }
+  }, [readNextQuery, readNextShowAll, userId, postId, readNextIds])
+
+  const addReadNext = (p: ReadNextPost) => {
+    if (readNextIds.length >= 3) return
+    setReadNextIds(prev => [...prev, p.id])
+    setReadNextPosts(prev => [...prev, p])
+    setReadNextResults(prev => prev.filter(r => r.id !== p.id))
+    markUnsaved()
+  }
+
+  const removeReadNext = (id: string) => {
+    setReadNextIds(prev => prev.filter(x => x !== id))
+    setReadNextPosts(prev => prev.filter(p => p.id !== id))
+    markUnsaved()
   }
 
   // Auto-save function
@@ -69,6 +111,7 @@ export function PostEditor({ post, userId }: PostEditorProps) {
         title,
         content,
         authors_note: authorsNote || null,
+        read_next_ids: readNextIds,
         excerpt: generateExcerpt(content),
         post_type: postType,
         status: visibility,
@@ -91,7 +134,7 @@ export function PostEditor({ post, userId }: PostEditorProps) {
       console.error('Failed to save post:', error)
       setSaveStatus('error')
     }
-  }, [title, content, authorsNote, postType, visibility, tags, wordCount, postId, userId])
+  }, [title, content, authorsNote, readNextIds, postType, visibility, tags, wordCount, postId, userId])
 
   // Auto-save with debounce
   useEffect(() => {
@@ -147,6 +190,7 @@ export function PostEditor({ post, userId }: PostEditorProps) {
         title,
         content,
         authors_note: authorsNote || null,
+        read_next_ids: readNextIds,
         excerpt: generateExcerpt(content),
         post_type: postType,
         status: visibility,
@@ -336,6 +380,89 @@ export function PostEditor({ post, userId }: PostEditorProps) {
           <span className="font-sans text-xs text-text-muted">
             {wordCount} {wordCount === 1 ? 'word' : 'words'}
           </span>
+        </div>
+
+        {/* Read Next */}
+        <div className="mt-10 pt-8 border-t border-border">
+          <div className="flex items-center justify-between mb-3">
+            <label className="font-sans text-xs text-text-muted uppercase tracking-wide">
+              Read Next <span className="normal-case">(optional · up to 3)</span>
+            </label>
+            <div className="flex items-center gap-1 text-xs font-sans">
+              <button
+                type="button"
+                onClick={() => setReadNextShowAll(false)}
+                className={cn(
+                  'px-2 py-0.5 rounded transition-colors',
+                  !readNextShowAll ? 'text-text-primary' : 'text-text-muted hover:text-text-primary'
+                )}
+              >
+                My posts
+              </button>
+              <span className="text-text-muted">·</span>
+              <button
+                type="button"
+                onClick={() => setReadNextShowAll(true)}
+                className={cn(
+                  'px-2 py-0.5 rounded transition-colors',
+                  readNextShowAll ? 'text-text-primary' : 'text-text-muted hover:text-text-primary'
+                )}
+              >
+                All posts
+              </button>
+            </div>
+          </div>
+
+          {/* Selected posts */}
+          {readNextPosts.length > 0 && (
+            <ul className="mb-3 space-y-1">
+              {readNextPosts.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-2 py-1">
+                  <span className="font-sans text-sm text-text-primary truncate">{p.title}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeReadNext(p.id)}
+                    className="shrink-0 text-text-muted hover:text-text-primary transition-colors"
+                    aria-label="Remove"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Search input */}
+          {readNextIds.length < 3 && (
+            <div className="relative">
+              <input
+                type="text"
+                value={readNextQuery}
+                onChange={(e) => setReadNextQuery(e.target.value)}
+                placeholder="Search posts..."
+                className="w-full bg-bg-surface border border-border rounded-md px-3 py-2 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30"
+              />
+              {(readNextQuery || readNextSearching) && readNextResults.length > 0 && (
+                <ul className="absolute z-10 mt-1 w-full bg-bg-surface border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                  {readNextResults.map((r) => (
+                    <li key={r.id}>
+                      <button
+                        type="button"
+                        onClick={() => { addReadNext(r); setReadNextQuery('') }}
+                        className="w-full text-left px-3 py-2 text-sm text-text-primary hover:bg-bg-raised transition-colors"
+                      >
+                        {r.title}
+                        <span className="ml-2 text-xs text-text-muted capitalize">{r.post_type}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {readNextQuery && !readNextSearching && readNextResults.length === 0 && (
+                <p className="mt-2 text-xs text-text-muted font-sans">No matching posts found.</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

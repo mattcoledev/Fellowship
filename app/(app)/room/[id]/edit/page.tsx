@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getPostById } from '@/lib/db'
+import { getPostById, getPostsByIds } from '@/lib/db'
 import { PostEditor } from '@/components/posts/PostEditor'
 
 interface EditPostPageProps {
@@ -18,13 +18,17 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
 
   try {
     const post = await getPostById(id)
-    
+
     // Check if user owns this post
     if (post.user_id !== user.id) {
       redirect('/room')
     }
 
-    return <PostEditor post={post} userId={user.id} />
+    const readNextPosts = post.read_next_ids?.length
+      ? await getPostsByIds(post.read_next_ids)
+      : []
+
+    return <PostEditor post={post} userId={user.id} readNextPosts={readNextPosts} />
   } catch {
     notFound()
   }

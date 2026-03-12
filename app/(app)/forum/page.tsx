@@ -29,7 +29,9 @@ export default async function ForumPage() {
           The Forum
         </h1>
         <div className="flex items-center gap-3">
-          <NotificationBell />
+          <span className="hidden lg:block">
+            <NotificationBell />
+          </span>
           <Button
             asChild
             className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
