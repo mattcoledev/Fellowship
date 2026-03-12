@@ -83,6 +83,24 @@ export async function signInWithMagicLink(formData: FormData) {
   return { success: 'Check your email for the magic link!' }
 }
 
+export async function sendPasswordReset(identifier: string) {
+  const supabase = await createClient()
+
+  let email = identifier.trim()
+  if (!email.includes('@')) {
+    const resolved = await resolveUsernameToEmail(email)
+    if (resolved) email = resolved
+    // If username not found, we still proceed silently (don't leak account existence)
+  }
+
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://fellowshipspace.com'}/auth/callback?next=/auth/reset-password`,
+  })
+
+  // Always return success — never reveal whether the account exists
+  return { success: true }
+}
+
 export async function signOut() {
   const supabase = await createClient()
   await supabase.auth.signOut()
