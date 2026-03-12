@@ -270,6 +270,16 @@ export async function deleteReply(id: string) {
   if (error) throw error
 }
 
+export async function deleteComment(id: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('comments')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+}
+
 // Notifications (client-side)
 export async function getNotifications(limit = 10) {
   const supabase = createClient()

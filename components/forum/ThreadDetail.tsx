@@ -222,6 +222,7 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
           onReply={handleReply}
           currentUserId={currentUserId}
           likesData={replyLikesData}
+          isAdmin={isAdmin}
         />
       )}
     </div>

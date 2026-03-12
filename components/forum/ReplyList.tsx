@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Reply, Profile, updateReply } from '@/lib/db-client'
+import { Reply, Profile, updateReply, deleteReply } from '@/lib/db-client'
 import { Button } from '@/components/ui/button'
+import { Trash2 } from 'lucide-react'
 import { LikeButton } from '@/components/ui/LikeButton'
 import { formatDistanceToNow } from 'date-fns'
 import { Avatar } from '@/components/ui/avatar'
@@ -16,13 +17,14 @@ interface ReplyItemProps {
   currentUserId: string | null
   likeCount: number
   userLiked: boolean
+  isAdmin?: boolean
 }
 
 function formatRelativeDate(dateString: string) {
   return formatDistanceToNow(new Date(dateString), { addSuffix: true })
 }
 
-function ReplyItem({ reply, onReply, isNested = false, currentUserId, likeCount, userLiked }: ReplyItemProps) {
+function ReplyItem({ reply, onReply, isNested = false, currentUserId, likeCount, userLiked, isAdmin }: ReplyItemProps) {
   const router = useRouter()
   const author = reply.profiles
   const isOwner = currentUserId === reply.user_id
@@ -51,6 +53,16 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId, likeCount,
   const handleCancelEdit = () => {
     setEditContent(reply.content)
     setIsEditing(false)
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Delete this reply?')) return
+    try {
+      await deleteReply(reply.id)
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to delete reply:', error)
+    }
   }
 
   return (
@@ -128,6 +140,15 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId, likeCount,
                     Edit
                   </button>
                 )}
+                {isAdmin && (
+                  <button
+                    onClick={handleDelete}
+                    className="text-text-muted hover:text-red-500 transition-colors"
+                    aria-label="Delete reply"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </>
           )}
@@ -142,9 +163,10 @@ interface ReplyListProps {
   onReply: (username: string, replyId: string | null) => void
   currentUserId: string | null
   likesData: Record<string, { count: number; liked: boolean }>
+  isAdmin?: boolean
 }
 
-export function ReplyList({ replies, onReply, currentUserId, likesData }: ReplyListProps) {
+export function ReplyList({ replies, onReply, currentUserId, likesData, isAdmin }: ReplyListProps) {
   const topLevelReplies = replies.filter(r => !r.parent_id)
   const nestedReplies = replies.filter(r => r.parent_id)
 
@@ -163,6 +185,7 @@ export function ReplyList({ replies, onReply, currentUserId, likesData }: ReplyL
               currentUserId={currentUserId}
               likeCount={like.count}
               userLiked={like.liked}
+              isAdmin={isAdmin}
             />
             {children.map((child) => {
               const childLike = likesData[child.id] || { count: 0, liked: false }
@@ -175,6 +198,7 @@ export function ReplyList({ replies, onReply, currentUserId, likesData }: ReplyL
                     currentUserId={currentUserId}
                     likeCount={childLike.count}
                     userLiked={childLike.liked}
+                    isAdmin={isAdmin}
                   />
                 </div>
               )

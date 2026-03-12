@@ -33,6 +33,16 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  let isAdmin = false
+  if (user) {
+    const { data: adminProfile } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    isAdmin = adminProfile?.is_admin ?? false
+  }
+
   let post
   try {
     post = await getPostBySlug(slug)
@@ -147,6 +157,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
           currentUserId={user?.id}
           currentUserProfile={currentUserProfile}
           commentLikesData={commentLikesData}
+          isAdmin={isAdmin}
         />
       </div>
     </div>

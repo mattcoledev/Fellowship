@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Comment, Profile, createComment, updateComment } from '@/lib/db-client'
+import { Trash2 } from 'lucide-react'
+import { Comment, Profile, createComment, updateComment, deleteComment } from '@/lib/db-client'
 import { Avatar } from '@/components/ui/avatar'
 import { LikeButton } from '@/components/ui/LikeButton'
 
@@ -14,6 +15,7 @@ interface CommentThreadProps {
   currentUserId?: string
   currentUserProfile?: Profile | null
   commentLikesData?: Record<string, { count: number; liked: boolean }>
+  isAdmin?: boolean
 }
 
 interface CommentItemProps {
@@ -25,6 +27,7 @@ interface CommentItemProps {
   likeCount: number
   userLiked: boolean
   commentLikesData: Record<string, { count: number; liked: boolean }>
+  isAdmin?: boolean
 }
 
 function formatRelativeDate(dateString: string): string {
@@ -40,7 +43,7 @@ function formatRelativeDate(dateString: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function CommentItem({ comment, allComments, postId, currentUserId, depth = 0, likeCount, userLiked, commentLikesData }: CommentItemProps) {
+function CommentItem({ comment, allComments, postId, currentUserId, depth = 0, likeCount, userLiked, commentLikesData, isAdmin }: CommentItemProps) {
   const router = useRouter()
   const [showReplyForm, setShowReplyForm] = useState(false)
   const [replyContent, setReplyContent] = useState('')
@@ -96,6 +99,16 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0, l
   const handleCancelEdit = () => {
     setEditContent(comment.content)
     setIsEditing(false)
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Delete this comment?')) return
+    try {
+      await deleteComment(comment.id)
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to delete comment:', error)
+    }
   }
 
   return (
@@ -178,6 +191,15 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0, l
                     Edit
                   </button>
                 )}
+                {isAdmin && (
+                  <button
+                    onClick={handleDelete}
+                    className="text-text-muted hover:text-red-500 transition-colors"
+                    aria-label="Delete comment"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </>
           )}
@@ -232,6 +254,7 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0, l
                 likeCount={replyLike.count}
                 userLiked={replyLike.liked}
                 commentLikesData={commentLikesData}
+                isAdmin={isAdmin}
               />
             )
           })}
@@ -241,7 +264,7 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0, l
   )
 }
 
-export function CommentThread({ comments, postId, currentUserId, currentUserProfile, commentLikesData = {} }: CommentThreadProps) {
+export function CommentThread({ comments, postId, currentUserId, currentUserProfile, commentLikesData = {}, isAdmin = false }: CommentThreadProps) {
   const router = useRouter()
   const [newComment, setNewComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -320,6 +343,7 @@ export function CommentThread({ comments, postId, currentUserId, currentUserProf
               likeCount={like.count}
               userLiked={like.liked}
               commentLikesData={commentLikesData}
+              isAdmin={isAdmin}
             />
           )
         })}
