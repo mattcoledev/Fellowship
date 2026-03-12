@@ -42,6 +42,7 @@ export function PostEditor({ post, userId }: PostEditorProps) {
   const [postId, setPostId] = useState<string | null>(post?.id || null)
   const [title, setTitle] = useState(post?.title || '')
   const [content, setContent] = useState(post?.content || '')
+  const [authorsNote, setAuthorsNote] = useState(post?.authors_note || '')
   const [postType, setPostType] = useState<PostType>(post?.post_type || 'essay')
   const [visibility, setVisibility] = useState<PostStatus>(post?.status || 'draft')
   const [tags, setTags] = useState<string[]>(post?.tags || [])
@@ -67,6 +68,7 @@ export function PostEditor({ post, userId }: PostEditorProps) {
       const postData = {
         title,
         content,
+        authors_note: authorsNote || null,
         excerpt: generateExcerpt(content),
         post_type: postType,
         status: visibility,
@@ -89,7 +91,7 @@ export function PostEditor({ post, userId }: PostEditorProps) {
       console.error('Failed to save post:', error)
       setSaveStatus('error')
     }
-  }, [title, content, postType, visibility, tags, wordCount, postId, userId])
+  }, [title, content, authorsNote, postType, visibility, tags, wordCount, postId, userId])
 
   // Auto-save with debounce
   useEffect(() => {
@@ -144,6 +146,7 @@ export function PostEditor({ post, userId }: PostEditorProps) {
       const postData = {
         title,
         content,
+        authors_note: authorsNote || null,
         excerpt: generateExcerpt(content),
         post_type: postType,
         status: visibility,
@@ -295,6 +298,22 @@ export function PostEditor({ post, userId }: PostEditorProps) {
 
         {/* Divider */}
         <div className="my-6 border-t border-border" />
+
+        {/* Author's Note */}
+        <div className="mb-6">
+          <label className="block font-sans text-xs text-text-muted uppercase tracking-wide mb-2">
+            Author&apos;s Note <span className="normal-case">(optional)</span>
+          </label>
+          <textarea
+            value={authorsNote}
+            onChange={(e) => { setAuthorsNote(e.target.value); markUnsaved() }}
+            placeholder="Give your readers some context before they dive in..."
+            rows={2}
+            className="w-full bg-transparent border-none outline-none resize-none font-sans text-sm text-text-secondary placeholder:text-text-muted leading-relaxed"
+          />
+        </div>
+
+        <div className="border-t border-border mb-6" />
 
         {/* Toolbar */}
         <MarkdownToolbar

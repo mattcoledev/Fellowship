@@ -19,6 +19,7 @@ export type Post = {
   title: string
   content: string | null
   excerpt: string | null
+  authors_note: string | null
   post_type: 'essay' | 'poem' | 'fiction' | 'reflection'
   status: 'draft' | 'private' | 'published'
   tags: string[]

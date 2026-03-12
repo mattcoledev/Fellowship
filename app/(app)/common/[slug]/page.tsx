@@ -115,6 +115,16 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
       {/* Divider */}
       <div className="my-8 border-t border-border" />
 
+      {/* Author's Note */}
+      {post.authors_note && (
+        <div className="mb-8 pl-4 border-l-2 border-accent-blue">
+          <p className="font-sans text-xs text-accent-blue uppercase tracking-wide mb-1">Author&apos;s Note</p>
+          <p className="font-sans text-sm text-text-secondary italic leading-relaxed">
+            {post.authors_note}
+          </p>
+        </div>
+      )}
+
       {/* Post body */}
       <MarkdownRenderer content={post.content ?? ''} variant="prose" />
 
