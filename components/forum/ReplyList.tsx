@@ -6,6 +6,7 @@ import { Reply, Profile, updateReply, deleteReply } from '@/lib/db-client'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
 import { LikeButton } from '@/components/ui/LikeButton'
+import { ContentRenderer } from '@/components/ui/ContentRenderer'
 import { formatDistanceToNow } from 'date-fns'
 import { Avatar } from '@/components/ui/avatar'
 import Link from 'next/link'
@@ -113,9 +114,10 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId, likeCount,
             </div>
           ) : (
             <>
-              <p className="font-sans text-sm text-text-primary mb-2 whitespace-pre-wrap">
-                {displayContent}
-              </p>
+              <ContentRenderer
+                content={displayContent}
+                className="font-sans text-sm text-text-primary mb-2 space-y-1"
+              />
               <div className="flex items-center gap-3">
                 <LikeButton
                   contentType="reply"

@@ -8,6 +8,7 @@ import { Trash2 } from 'lucide-react'
 import { Comment, Profile, createComment, updateComment, deleteComment } from '@/lib/db-client'
 import { Avatar } from '@/components/ui/avatar'
 import { LikeButton } from '@/components/ui/LikeButton'
+import { ContentRenderer } from '@/components/ui/ContentRenderer'
 
 interface CommentThreadProps {
   comments: (Comment & { profiles: Profile })[]
@@ -162,9 +163,10 @@ function CommentItem({ comment, allComments, postId, currentUserId, depth = 0, l
             </div>
           ) : (
             <>
-              <p className="mt-1 font-sans text-sm text-text-primary">
-                {displayContent}
-              </p>
+              <ContentRenderer
+                content={displayContent}
+                className="mt-1 font-sans text-sm text-text-primary space-y-1"
+              />
 
               {/* Action buttons */}
               <div className="mt-2 flex items-center gap-3">
