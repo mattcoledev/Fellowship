@@ -14,13 +14,14 @@ interface ThreadCardProps {
     last_reply_profile?: Profile | null
   }
   isAdmin?: boolean
+  isRead?: boolean
 }
 
 function formatRelativeDate(dateString: string) {
   return formatDistanceToNow(new Date(dateString), { addSuffix: true })
 }
 
-export function ThreadCard({ thread, isAdmin = false }: ThreadCardProps) {
+export function ThreadCard({ thread, isAdmin = false, isRead = false }: ThreadCardProps) {
   const router = useRouter()
   const author = thread.profiles
   const lastReplyAuthor = thread.last_reply_profile
@@ -74,13 +75,13 @@ export function ThreadCard({ thread, isAdmin = false }: ThreadCardProps) {
 
         {/* Title (if present) */}
         {thread.title && (
-          <h3 className="font-sans text-base font-semibold text-text-primary mb-1">
+          <h3 className={`font-sans text-base font-semibold mb-1 ${isRead ? 'text-text-muted' : 'text-text-primary'}`}>
             {thread.title}
           </h3>
         )}
 
         {/* Body preview — strip markdown syntax for clean plain-text snippet */}
-        <p className="font-sans text-sm text-text-secondary line-clamp-2 mb-3">
+        <p className={`font-sans text-sm line-clamp-2 mb-3 ${isRead ? 'text-text-muted' : 'text-text-secondary'}`}>
           {thread.body
             .replace(/^#{1,6}\s+/gm, '')       // headings
             .replace(/\*\*(.+?)\*\*/g, '$1')    // bold

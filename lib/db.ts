@@ -25,6 +25,7 @@ export type Post = {
   word_count: number
   slug: string | null
   published_at: string | null
+  last_activity_at: string | null
   created_at: string
   updated_at: string
   profiles?: Profile
@@ -480,4 +481,39 @@ export async function getUnreadNotificationCount(userId: string) {
 
   if (error) throw error
   return count || 0
+}
+
+// Read tracking
+export async function getThreadReadsMap(
+  userId: string,
+  threadIds: string[]
+): Promise<Record<string, string>> {
+  if (threadIds.length === 0) return {}
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('thread_reads')
+    .select('thread_id, last_seen_at')
+    .eq('user_id', userId)
+    .in('thread_id', threadIds)
+
+  const map: Record<string, string> = {}
+  for (const row of data || []) map[row.thread_id] = row.last_seen_at
+  return map
+}
+
+export async function getPostReadsMap(
+  userId: string,
+  postIds: string[]
+): Promise<Record<string, string>> {
+  if (postIds.length === 0) return {}
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('post_reads')
+    .select('post_id, last_seen_at')
+    .eq('user_id', userId)
+    .in('post_id', postIds)
+
+  const map: Record<string, string> = {}
+  for (const row of data || []) map[row.post_id] = row.last_seen_at
+  return map
 }

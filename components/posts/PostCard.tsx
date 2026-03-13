@@ -19,6 +19,7 @@ interface PostCardProps {
   post: Post & { profiles?: Profile }
   variant?: 'dashboard' | 'feed'
   commentCount?: number
+  isRead?: boolean
 }
 
 const typeLabels: Record<string, string> = {
@@ -47,7 +48,7 @@ function formatRelativeDate(dateString: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export function PostCard({ post, variant = 'dashboard', commentCount = 0 }: PostCardProps) {
+export function PostCard({ post, variant = 'dashboard', commentCount = 0, isRead = false }: PostCardProps) {
   const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)
   const status = statusConfig[post.status]
@@ -102,13 +103,13 @@ export function PostCard({ post, variant = 'dashboard', commentCount = 0 }: Post
           </div>
 
           {/* Title */}
-          <h2 className="font-serif text-xl text-text-primary hover:text-accent-blue transition-colors">
+          <h2 className={`font-serif text-xl hover:text-accent-blue transition-colors ${isRead ? 'text-text-muted' : 'text-text-primary'}`}>
             {post.title}
           </h2>
 
           {/* Excerpt */}
           {post.excerpt && (
-            <p className="mt-2 font-body text-base text-text-secondary line-clamp-3">
+            <p className={`mt-2 font-body text-base line-clamp-3 ${isRead ? 'text-text-muted' : 'text-text-secondary'}`}>
               {post.excerpt}
             </p>
           )}

@@ -5,6 +5,7 @@ import { CommentThread } from '@/components/comments/CommentThread'
 import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer'
 import { LikeButton } from '@/components/ui/LikeButton'
 import { ReadNext } from '@/components/posts/ReadNext'
+import { MarkPostRead } from '@/components/posts/MarkPostRead'
 import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Avatar } from '@/components/ui/avatar'
@@ -70,6 +71,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
   return (
     <div className="max-w-[860px] mx-auto px-6 py-8">
+      <MarkPostRead postId={post.id} userId={user?.id} />
       {/* Back link */}
       <Link
         href="/common"

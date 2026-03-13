@@ -27,6 +27,7 @@ export type Post = {
   word_count: number
   slug: string | null
   published_at: string | null
+  last_activity_at: string | null
   created_at: string
   updated_at: string
   profiles?: Profile
@@ -154,6 +155,13 @@ export async function createComment(comment: {
     .single()
 
   if (error) throw error
+
+  // Bump post activity so it appears unread for other members
+  await supabase
+    .from('posts')
+    .update({ last_activity_at: new Date().toISOString() })
+    .eq('id', comment.post_id)
+
   return data as Comment & { profiles: Profile }
 }
 

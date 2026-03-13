@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Trash2 } from 'lucide-react'
@@ -13,6 +13,7 @@ import { ReplyList } from './ReplyList'
 import { LikeButton } from '@/components/ui/LikeButton'
 import { formatDistanceToNow } from 'date-fns'
 import { Avatar } from '@/components/ui/avatar'
+import { markThreadRead } from '@/lib/read-actions'
 
 interface ThreadDetailProps {
   thread: Thread & { profiles: Profile }
@@ -38,6 +39,10 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
   const [isSaving, setIsSaving] = useState(false)
   const editRef = useRef<HTMLTextAreaElement>(null)
   const author = thread.profiles
+
+  useEffect(() => {
+    if (currentUserId) markThreadRead(thread.id)
+  }, [thread.id, currentUserId])
 
   // Check if within 15 minutes of posting (for edit button)
   const createdAt = new Date(thread.created_at)

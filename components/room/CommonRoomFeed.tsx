@@ -33,9 +33,10 @@ const sortOptions: { value: SortOption; label: string }[] = [
 
 interface CommonRoomFeedProps {
   initialPosts: (Post & { profiles: Profile })[]
+  readMap?: Record<string, string>
 }
 
-export function CommonRoomFeed({ initialPosts }: CommonRoomFeedProps) {
+export function CommonRoomFeed({ initialPosts, readMap = {} }: CommonRoomFeedProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [authorFilter, setAuthorFilter] = useState<string>('all')
@@ -221,13 +222,19 @@ export function CommonRoomFeed({ initialPosts }: CommonRoomFeedProps) {
       <div className="max-w-2xl mx-auto space-y-4">
         {filteredPosts.length > 0 ? (
           <>
-            {filteredPosts.map((post) => (
-              <PostCard 
-                key={post.id} 
-                post={post} 
-                variant="feed"
-              />
-            ))}
+            {filteredPosts.map((post) => {
+              const lastSeen = readMap[post.id]
+              const activityAt = post.last_activity_at || post.published_at || post.created_at
+              const isRead = !!lastSeen && lastSeen >= activityAt
+              return (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  variant="feed"
+                  isRead={isRead}
+                />
+              )
+            })}
           </>
         ) : (
           <div className="text-center py-16">

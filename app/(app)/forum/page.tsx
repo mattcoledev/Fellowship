@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { ThreadCard } from '@/components/forum/ThreadCard'
-import { getThreads } from '@/lib/db'
+import { getThreads, getThreadReadsMap } from '@/lib/db'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function ForumPage() {
@@ -20,6 +20,10 @@ export default async function ForumPage() {
   }
 
   const threads = await getThreads()
+
+  const readMap = user
+    ? await getThreadReadsMap(user.id, threads.map(t => t.id))
+    : {}
 
   return (
     <div className="max-w-[900px] mx-auto px-6 py-8">
@@ -44,9 +48,14 @@ export default async function ForumPage() {
       {/* Thread list */}
       {threads.length > 0 ? (
         <div className="space-y-3">
-          {threads.map((thread) => (
-            <ThreadCard key={thread.id} thread={thread} isAdmin={isAdmin} />
-          ))}
+          {threads.map((thread) => {
+            const activityAt = thread.last_reply_at || thread.created_at
+            const lastSeen = readMap[thread.id]
+            const isRead = !!lastSeen && lastSeen >= activityAt
+            return (
+              <ThreadCard key={thread.id} thread={thread} isAdmin={isAdmin} isRead={isRead} />
+            )
+          })}
         </div>
       ) : (
         <div className="text-center py-16">
