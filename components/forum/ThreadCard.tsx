@@ -100,15 +100,15 @@ export function ThreadCard({ thread, isAdmin = false, isRead = false }: ThreadCa
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-text-muted">
             <MessageCircle className="w-3.5 h-3.5" />
-            <span className="font-sans text-xs">{thread.reply_count}</span>
+            <span className="font-sans text-xs">
+              {thread.reply_count} {thread.reply_count === 1 ? 'reply' : 'replies'}
+              {thread.last_reply_at && (
+                <> · <span className={!isRead ? 'text-accent-blue' : ''}>{!isRead ? 'new reply' : 'last reply'}</span> {formatRelativeDate(thread.last_reply_at)}</>
+              )}
+            </span>
           </div>
 
           <div className="flex items-center gap-3">
-            {lastReplyAuthor && thread.last_reply_at && (
-              <span className="font-sans text-xs text-text-muted">
-                Last reply by {lastReplyAuthor.display_name || lastReplyAuthor.username} {formatRelativeDate(thread.last_reply_at)}
-              </span>
-            )}
             {isAdmin && (
               <div className="flex items-center gap-1">
                 <button

@@ -550,3 +550,109 @@ export async function getPostCommentCountsMap(postIds: string[]): Promise<Record
   }
   return map
 }
+
+// Activity Feed
+export type ActivityItem = {
+  id: string
+  type: 'post' | 'comment' | 'thread' | 'reply'
+  timestamp: string
+  actor: { username: string | null; display_name: string | null }
+  href: string
+  targetTitle: string
+}
+
+export async function getRecentPublishedPosts(limit: number) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('posts')
+    .select('id, title, slug, published_at, profiles:user_id (username, display_name)')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data as { id: string; title: string; slug: string | null; published_at: string; profiles: { username: string | null; display_name: string | null } }[]
+}
+
+export async function getRecentComments(limit: number) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('comments')
+    .select('id, created_at, profiles:user_id (username, display_name), posts:post_id (title, slug)')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data as { id: string; created_at: string; profiles: { username: string | null; display_name: string | null }; posts: { title: string; slug: string | null } }[]
+}
+
+export async function getRecentThreads(limit: number) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('threads')
+    .select('id, title, body, created_at, profiles:user_id (username, display_name)')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data as { id: string; title: string | null; body: string; created_at: string; profiles: { username: string | null; display_name: string | null } }[]
+}
+
+export async function getRecentReplies(limit: number) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('replies')
+    .select('id, created_at, thread_id, profiles:user_id (username, display_name), threads:thread_id (id, title, body)')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data as { id: string; created_at: string; thread_id: string; profiles: { username: string | null; display_name: string | null }; threads: { id: string; title: string | null; body: string } }[]
+}
+
+export async function getActivityFeed(limit = 15): Promise<ActivityItem[]> {
+  const [posts, comments, threads, replies] = await Promise.all([
+    getRecentPublishedPosts(limit),
+    getRecentComments(limit),
+    getRecentThreads(limit),
+    getRecentReplies(limit),
+  ])
+
+  const threadSnippet = (t: { title: string | null; body: string }) =>
+    t.title || (t.body.length > 60 ? t.body.slice(0, 60).trim() + '…' : t.body.trim())
+
+  const items: ActivityItem[] = [
+    ...posts.map(p => ({
+      id: `post_${p.id}`,
+      type: 'post' as const,
+      timestamp: p.published_at,
+      actor: { username: p.profiles.username, display_name: p.profiles.display_name },
+      href: `/common/${p.slug}`,
+      targetTitle: p.title,
+    })),
+    ...comments.map(c => ({
+      id: `comment_${c.id}`,
+      type: 'comment' as const,
+      timestamp: c.created_at,
+      actor: { username: c.profiles.username, display_name: c.profiles.display_name },
+      href: `/common/${c.posts.slug}`,
+      targetTitle: c.posts.title,
+    })),
+    ...threads.map(t => ({
+      id: `thread_${t.id}`,
+      type: 'thread' as const,
+      timestamp: t.created_at,
+      actor: { username: t.profiles.username, display_name: t.profiles.display_name },
+      href: `/forum/${t.id}`,
+      targetTitle: threadSnippet(t),
+    })),
+    ...replies.map(r => ({
+      id: `reply_${r.id}`,
+      type: 'reply' as const,
+      timestamp: r.created_at,
+      actor: { username: r.profiles.username, display_name: r.profiles.display_name },
+      href: `/forum/${r.thread_id}`,
+      targetTitle: threadSnippet(r.threads),
+    })),
+  ]
+
+  return items
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, limit)
+}

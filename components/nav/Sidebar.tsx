@@ -3,12 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { 
-  PenLine, 
-  Users, 
+import {
+  Home,
+  PenLine,
+  Users,
   MessageCircle,
-  User, 
-  Settings, 
+  User,
+  Settings,
   LogOut,
   Menu,
   X
@@ -22,6 +23,7 @@ interface SidebarProps {
 }
 
 const navItems = [
+  { href: '/home', label: 'Home', icon: Home },
   { href: '/room', label: 'Your Room', icon: PenLine },
   { href: '/common', label: 'The Common Room', icon: Users },
   { href: '/forum', label: 'The Roundtable', icon: MessageCircle },
@@ -43,7 +45,7 @@ export function Sidebar({ username }: SidebarProps) {
     <>
       {/* Mobile header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-bg-base border-b border-border z-50 flex items-center justify-between px-4">
-        <Link href="/room" className="font-serif text-xl text-text-primary">
+        <Link href="/home" className="font-serif text-xl text-text-primary">
           The Fellowship
         </Link>
         <div className="flex items-center gap-2">
@@ -74,7 +76,7 @@ export function Sidebar({ username }: SidebarProps) {
       )}>
         {/* Brand */}
         <div className="p-6 lg:pt-6 pt-20">
-          <Link href="/room" className="font-serif text-2xl text-text-primary">
+          <Link href="/home" className="font-serif text-2xl text-text-primary">
             The Fellowship
           </Link>
         </div>

@@ -129,7 +129,12 @@ export function PostCard({ post, variant = 'dashboard', commentCount = 0, isRead
             {commentCount > 0 && (
               <div className="flex items-center gap-1 text-xs text-text-muted">
                 <MessageCircle className="w-3.5 h-3.5" />
-                <span>{commentCount}</span>
+                <span>
+                  {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+                  {post.last_activity_at && (
+                    <> · <span className={!isRead ? 'text-accent-blue' : ''}>{!isRead ? 'new comment' : 'last comment'}</span> {formatRelativeDate(post.last_activity_at)}</>
+                  )}
+                </span>
               </div>
             )}
           </div>
