@@ -23,13 +23,14 @@ interface ThreadDetailProps {
   threadLikeCount: number
   threadUserLiked: boolean
   replyLikesData: Record<string, { count: number; liked: boolean }>
+  uniqueViewCount?: number
 }
 
 function formatRelativeDate(dateString: string) {
   return formatDistanceToNow(new Date(dateString), { addSuffix: true })
 }
 
-export function ThreadDetail({ thread, replies: initialReplies, currentUserId, isAdmin = false, threadLikeCount, threadUserLiked, replyLikesData }: ThreadDetailProps) {
+export function ThreadDetail({ thread, replies: initialReplies, currentUserId, isAdmin = false, threadLikeCount, threadUserLiked, replyLikesData, uniqueViewCount = 0 }: ThreadDetailProps) {
   const router = useRouter()
   const [replies, setReplies] = useState(initialReplies)
   const [replyTo, setReplyTo] = useState<{ username: string; replyId: string | null } | null>(null)
@@ -127,7 +128,12 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
           <span className="font-sans text-xs text-text-muted">
             {formatRelativeDate(thread.created_at)}
           </span>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-3">
+            {uniqueViewCount > 0 && (
+              <span className="font-sans text-xs text-text-muted">
+                Seen by {uniqueViewCount} {uniqueViewCount === 1 ? 'member' : 'members'}
+              </span>
+            )}
             <LikeButton
               contentType="thread"
               contentId={thread.id}

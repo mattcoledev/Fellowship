@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getPostBySlug, getPostComments, getProfileById, getLikeCount, hasUserLiked, getCommentLikesData, getPostsByIds } from '@/lib/db'
+import { getPostBySlug, getPostComments, getProfileById, getLikeCount, hasUserLiked, getCommentLikesData, getPostsByIds, getPostUniqueViewCount } from '@/lib/db'
 import { CommentThread } from '@/components/comments/CommentThread'
 import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer'
 import { LikeButton } from '@/components/ui/LikeButton'
@@ -56,12 +56,13 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
     notFound()
   }
 
-  const [comments, currentUserProfile, postLikeCount, postUserLiked, readNextPosts] = await Promise.all([
+  const [comments, currentUserProfile, postLikeCount, postUserLiked, readNextPosts, uniqueViewCount] = await Promise.all([
     getPostComments(post.id),
     user ? getProfileById(user.id) : Promise.resolve(null),
     getLikeCount(post.id),
     user ? hasUserLiked(post.id, user.id) : Promise.resolve(false),
     post.read_next_ids?.length ? getPostsByIds(post.read_next_ids) : Promise.resolve([]),
+    getPostUniqueViewCount(post.id),
   ])
 
   const commentIds = comments.map(c => c.id)
@@ -142,8 +143,8 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
       {/* Post body */}
       <MarkdownRenderer content={post.content ?? ''} variant="prose" />
 
-      {/* Post like */}
-      <div className="mt-8 flex items-center gap-2">
+      {/* Post like + view count */}
+      <div className="mt-8 flex items-center gap-4">
         <LikeButton
           contentType="post"
           contentId={post.id}
@@ -151,6 +152,11 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
           initialLiked={postUserLiked}
           currentUserId={user?.id}
         />
+        {uniqueViewCount > 0 && (
+          <span className="font-sans text-xs text-text-muted">
+            Seen by {uniqueViewCount} {uniqueViewCount === 1 ? 'member' : 'members'}
+          </span>
+        )}
       </div>
 
       {/* Read Next */}

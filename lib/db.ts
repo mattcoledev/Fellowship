@@ -517,3 +517,21 @@ export async function getPostReadsMap(
   for (const row of data || []) map[row.post_id] = row.last_seen_at
   return map
 }
+
+export async function getPostUniqueViewCount(postId: string): Promise<number> {
+  const supabase = await createClient()
+  const { count } = await supabase
+    .from('post_reads')
+    .select('*', { count: 'exact', head: true })
+    .eq('post_id', postId)
+  return count || 0
+}
+
+export async function getThreadUniqueViewCount(threadId: string): Promise<number> {
+  const supabase = await createClient()
+  const { count } = await supabase
+    .from('thread_reads')
+    .select('*', { count: 'exact', head: true })
+    .eq('thread_id', threadId)
+  return count || 0
+}
