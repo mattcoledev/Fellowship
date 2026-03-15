@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import { Post, createPost, updatePost } from '@/lib/db-client'
 import { MarkdownToolbar } from '@/components/editor/MarkdownToolbar'
+import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer'
 import { searchPostsForReadNext } from '@/lib/post-actions'
 
 type ReadNextPost = { id: string; title: string; slug: string | null; post_type: string; tags: string[] }
@@ -53,6 +54,7 @@ export function PostEditor({ post, userId, readNextPosts: initialReadNextPosts =
   const [tagInput, setTagInput] = useState('')
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('saved')
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit')
 
   // Read Next state
   const [readNextIds, setReadNextIds] = useState<string[]>(post?.read_next_ids || [])
@@ -231,12 +233,40 @@ export function PostEditor({ post, userId, readNextPosts: initialReadNextPosts =
             </Link>
           </Button>
 
-          <span className="font-sans text-xs text-text-muted">
-            {saveStatus === 'saving' && 'Saving...'}
-            {saveStatus === 'saved' && 'Saved'}
-            {saveStatus === 'unsaved' && 'Unsaved changes'}
-            {saveStatus === 'error' && 'Failed to save'}
-          </span>
+          <div className="flex items-center gap-4">
+            {/* Edit / Preview toggle */}
+            <div className="flex items-center gap-1 font-sans text-sm">
+              <button
+                onClick={() => setMode('edit')}
+                className={cn(
+                  'px-3 py-1 rounded transition-colors',
+                  mode === 'edit'
+                    ? 'text-text-primary bg-bg-raised'
+                    : 'text-text-muted hover:text-text-primary'
+                )}
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => setMode('preview')}
+                className={cn(
+                  'px-3 py-1 rounded transition-colors',
+                  mode === 'preview'
+                    ? 'text-text-primary bg-bg-raised'
+                    : 'text-text-muted hover:text-text-primary'
+                )}
+              >
+                Preview
+              </button>
+            </div>
+
+            <span className="font-sans text-xs text-text-muted">
+              {saveStatus === 'saving' && 'Saving...'}
+              {saveStatus === 'saved' && 'Saved'}
+              {saveStatus === 'unsaved' && 'Unsaved changes'}
+              {saveStatus === 'error' && 'Failed to save'}
+            </span>
+          </div>
 
           <div className="flex items-center gap-3">
             <DropdownMenu>
@@ -281,109 +311,135 @@ export function PostEditor({ post, userId, readNextPosts: initialReadNextPosts =
 
       {/* Editor area */}
       <div className="max-w-[800px] mx-auto px-6 py-8">
-        {/* Title */}
-        <input
-          type="text"
-          value={title}
-          onChange={handleTitleChange}
-          placeholder="Title..."
-          className="w-full bg-transparent border-none outline-none font-serif text-4xl text-text-primary placeholder:text-text-muted"
-        />
 
-        {/* Post type selector */}
-        <div className="mt-4 flex items-center gap-4">
-          {postTypes.map((type, index) => (
-            <button
-              key={type.value}
-              onClick={() => {
-                setPostType(type.value)
-                markUnsaved()
-              }}
-              className={cn(
-                "font-sans text-sm transition-colors",
-                postType === type.value 
-                  ? "text-text-primary" 
-                  : "text-text-secondary hover:text-text-primary"
-              )}
-            >
-              {type.label}
-              {index < postTypes.length - 1 && (
-                <span className="text-text-muted ml-4">·</span>
-              )}
-            </button>
-          ))}
-        </div>
+        {mode === 'preview' ? (
+          /* ── Preview mode ── */
+          <div>
+            <p className="font-sans text-xs text-text-muted uppercase tracking-wide mb-6">
+              Preview — not published
+            </p>
+            <h1 className="font-serif text-4xl text-text-primary mb-4">
+              {title || <span className="text-text-muted">Untitled</span>}
+            </h1>
+            {authorsNote && (
+              <p className="font-sans text-sm text-text-secondary italic mb-6 border-l-2 border-border pl-4">
+                {authorsNote}
+              </p>
+            )}
+            {content ? (
+              <MarkdownRenderer content={content} variant="prose" />
+            ) : (
+              <p className="font-body text-lg text-text-muted italic">No content yet.</p>
+            )}
+          </div>
+        ) : (
+          /* ── Edit mode ── */
+          <>
+            {/* Title */}
+            <input
+              type="text"
+              value={title}
+              onChange={handleTitleChange}
+              placeholder="Title..."
+              className="w-full bg-transparent border-none outline-none font-serif text-4xl text-text-primary placeholder:text-text-muted"
+            />
 
-        {/* Tags input */}
-        <div className="mt-4 flex items-center gap-2 flex-wrap">
-          {tags.map((tag) => (
-            <span 
-              key={tag}
-              className="inline-flex items-center gap-1 bg-accent-subtle text-accent-blue text-xs font-medium px-2 py-0.5 rounded"
-            >
-              {tag}
-              <button 
-                onClick={() => removeTag(tag)}
-                className="hover:text-white transition-colors"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
-          <input
-            type="text"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={handleTagKeyDown}
-            placeholder={tags.length === 0 ? "Add tags..." : ""}
-            className="flex-1 min-w-[100px] bg-transparent border-none outline-none font-sans text-sm text-text-primary placeholder:text-text-muted"
-          />
-        </div>
+            {/* Post type selector */}
+            <div className="mt-4 flex items-center gap-4">
+              {postTypes.map((type, index) => (
+                <button
+                  key={type.value}
+                  onClick={() => {
+                    setPostType(type.value)
+                    markUnsaved()
+                  }}
+                  className={cn(
+                    "font-sans text-sm transition-colors",
+                    postType === type.value
+                      ? "text-text-primary"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  {type.label}
+                  {index < postTypes.length - 1 && (
+                    <span className="text-text-muted ml-4">·</span>
+                  )}
+                </button>
+              ))}
+            </div>
 
-        {/* Divider */}
-        <div className="my-6 border-t border-border" />
+            {/* Tags input */}
+            <div className="mt-4 flex items-center gap-2 flex-wrap">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 bg-accent-subtle text-accent-blue text-xs font-medium px-2 py-0.5 rounded"
+                >
+                  {tag}
+                  <button
+                    onClick={() => removeTag(tag)}
+                    className="hover:text-white transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                placeholder={tags.length === 0 ? "Add tags..." : ""}
+                className="flex-1 min-w-[100px] bg-transparent border-none outline-none font-sans text-sm text-text-primary placeholder:text-text-muted"
+              />
+            </div>
 
-        {/* Author's Note */}
-        <div className="mb-6">
-          <label className="block font-sans text-xs text-text-muted uppercase tracking-wide mb-2">
-            Author&apos;s Note <span className="normal-case">(optional)</span>
-          </label>
-          <textarea
-            value={authorsNote}
-            onChange={(e) => { setAuthorsNote(e.target.value); markUnsaved() }}
-            placeholder="Give your readers some context before they dive in..."
-            rows={2}
-            className="w-full bg-transparent border-none outline-none resize-none font-sans text-sm text-text-secondary placeholder:text-text-muted leading-relaxed"
-          />
-        </div>
+            {/* Divider */}
+            <div className="my-6 border-t border-border" />
 
-        <div className="border-t border-border mb-6" />
+            {/* Author's Note */}
+            <div className="mb-6">
+              <label className="block font-sans text-xs text-text-muted uppercase tracking-wide mb-2">
+                Author&apos;s Note <span className="normal-case">(optional)</span>
+              </label>
+              <textarea
+                value={authorsNote}
+                onChange={(e) => { setAuthorsNote(e.target.value); markUnsaved() }}
+                placeholder="Give your readers some context before they dive in..."
+                rows={2}
+                className="w-full bg-transparent border-none outline-none resize-none font-sans text-sm text-text-secondary placeholder:text-text-muted leading-relaxed"
+              />
+            </div>
 
-        {/* Toolbar */}
-        <MarkdownToolbar
-          textareaRef={textareaRef}
-          onChange={(v) => { setContent(v); markUnsaved() }}
-          className="mb-4"
-        />
+            <div className="border-t border-border mb-6" />
 
-        {/* Content area */}
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={handleContentChange}
-          placeholder="Start writing..."
-          className="w-full min-h-[400px] bg-transparent border-none outline-none resize-none font-body text-lg text-text-primary placeholder:text-text-muted leading-relaxed"
-        />
+            {/* Toolbar */}
+            <MarkdownToolbar
+              textareaRef={textareaRef}
+              onChange={(v) => { setContent(v); markUnsaved() }}
+              className="mb-4"
+            />
 
-        {/* Word count */}
-        <div className="mt-4 text-right">
-          <span className="font-sans text-xs text-text-muted">
-            {wordCount} {wordCount === 1 ? 'word' : 'words'}
-          </span>
-        </div>
+            {/* Content area */}
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={handleContentChange}
+              placeholder="Start writing..."
+              className="w-full min-h-[400px] bg-transparent border-none outline-none resize-none font-body text-lg text-text-primary placeholder:text-text-muted leading-relaxed"
+            />
 
-        {/* Read Next */}
-        <div className="mt-10 pt-8 border-t border-border">
+            {/* Word count */}
+            <div className="mt-4 text-right">
+              <span className="font-sans text-xs text-text-muted">
+                {wordCount} {wordCount === 1 ? 'word' : 'words'}
+              </span>
+            </div>
+          </>
+        )}
+
+        {/* Read Next — edit mode only */}
+        {mode === 'edit' && <div className="mt-10 pt-8 border-t border-border">
           <div className="flex items-center justify-between mb-3">
             <label className="font-sans text-xs text-text-muted uppercase tracking-wide">
               Read Next <span className="normal-case">(optional · up to 3)</span>
@@ -463,7 +519,7 @@ export function PostEditor({ post, userId, readNextPosts: initialReadNextPosts =
               )}
             </div>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   )

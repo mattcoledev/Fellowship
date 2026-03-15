@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { createThread } from '@/lib/db-client'
 import { createClient } from '@/lib/supabase/client'
 import { MarkdownToolbar } from '@/components/editor/MarkdownToolbar'
+import { MarkdownRenderer } from '@/components/editor/MarkdownRenderer'
+import { cn } from '@/lib/utils'
 
 export default function NewThreadPage() {
   const router = useRouter()
@@ -17,6 +19,7 @@ export default function NewThreadPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit')
   const bodyRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -91,25 +94,68 @@ export default function NewThreadPage() {
 
           {/* Body field */}
           <div>
-            <label
-              htmlFor="body"
-              className="block font-sans text-sm text-text-secondary mb-2"
-            >
-              {"What's on your mind?"}
-            </label>
-            <MarkdownToolbar
-              textareaRef={bodyRef}
-              onChange={setBody}
-              className="mb-2"
-            />
-            <Textarea
-              id="body"
-              ref={bodyRef}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Start a thread..."
-              className="min-h-[120px] bg-bg-raised border-border text-text-primary placeholder:text-text-muted font-sans resize-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30"
-            />
+            <div className="flex items-center justify-between mb-2">
+              <label
+                htmlFor="body"
+                className="font-sans text-sm text-text-secondary"
+              >
+                {"What's on your mind?"}
+              </label>
+              {/* Edit / Preview toggle */}
+              <div className="flex items-center gap-1 font-sans text-xs">
+                <button
+                  type="button"
+                  onClick={() => setMode('edit')}
+                  className={cn(
+                    'px-2 py-0.5 rounded transition-colors',
+                    mode === 'edit'
+                      ? 'text-text-primary bg-bg-base'
+                      : 'text-text-muted hover:text-text-primary'
+                  )}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('preview')}
+                  className={cn(
+                    'px-2 py-0.5 rounded transition-colors',
+                    mode === 'preview'
+                      ? 'text-text-primary bg-bg-base'
+                      : 'text-text-muted hover:text-text-primary'
+                  )}
+                >
+                  Preview
+                </button>
+              </div>
+            </div>
+
+            {mode === 'edit' ? (
+              <>
+                <MarkdownToolbar
+                  textareaRef={bodyRef}
+                  onChange={setBody}
+                  className="mb-2"
+                />
+                <Textarea
+                  id="body"
+                  ref={bodyRef}
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder="Start a thread..."
+                  className="min-h-[120px] bg-bg-raised border-border text-text-primary placeholder:text-text-muted font-sans resize-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/30"
+                />
+              </>
+            ) : (
+              <div className="min-h-[120px] bg-bg-raised border border-border rounded-md px-3 py-2">
+                {body.trim() ? (
+                  <MarkdownRenderer content={body} variant="forum" />
+                ) : (
+                  <p className="font-sans text-sm text-text-muted italic">Nothing written yet.</p>
+                )}
+              </div>
+            )}
+
             {error && (
               <p className="font-sans text-sm text-red-400 mt-2">{error}</p>
             )}
