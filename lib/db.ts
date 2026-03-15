@@ -535,3 +535,18 @@ export async function getThreadUniqueViewCount(threadId: string): Promise<number
     .eq('thread_id', threadId)
   return count || 0
 }
+
+export async function getPostCommentCountsMap(postIds: string[]): Promise<Record<string, number>> {
+  if (postIds.length === 0) return {}
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('comments')
+    .select('post_id')
+    .in('post_id', postIds)
+
+  const map: Record<string, number> = {}
+  for (const row of data || []) {
+    map[row.post_id] = (map[row.post_id] || 0) + 1
+  }
+  return map
+}

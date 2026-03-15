@@ -176,7 +176,7 @@ export default function NewThreadPage() {
               disabled={isSubmitting}
               className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
             >
-              {isSubmitting ? 'Posting...' : 'Post to Forum'}
+              {isSubmitting ? 'Posting...' : 'Post to Roundtable'}
             </Button>
           </div>
         </form>

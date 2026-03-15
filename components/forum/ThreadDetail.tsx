@@ -113,7 +113,7 @@ export function ThreadDetail({ thread, replies: initialReplies, currentUserId, i
         className="inline-flex items-center gap-1.5 font-sans text-sm text-text-muted hover:text-text-primary transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
-        The Forum
+        The Roundtable
       </Link>
 
       {/* Thread header */}

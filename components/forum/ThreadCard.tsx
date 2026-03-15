@@ -53,7 +53,7 @@ export function ThreadCard({ thread, isAdmin = false, isRead = false }: ThreadCa
 
   return (
     <Link href={`/forum/${thread.id}`}>
-      <div className="bg-bg-surface border border-border rounded-lg px-5 py-4 hover:bg-bg-raised cursor-pointer transition-colors">
+      <div className="bg-bg-surface border border-border rounded-lg px-5 py-4 hover:bg-bg-raised hover:shadow-sm cursor-pointer transition-all">
         {/* Top row: avatar, author, timestamp */}
         <div className="flex items-center gap-2 mb-2">
           <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/author/${author?.username}`) }} className="cursor-pointer">

@@ -78,7 +78,7 @@ export function PostCard({ post, variant = 'dashboard', commentCount = 0, isRead
     
     return (
       <Link href={`/common/${post.slug}`}>
-        <article className="bg-bg-surface border border-border rounded-lg p-6 hover:bg-bg-raised transition-colors cursor-pointer">
+        <article className="bg-bg-surface border border-border rounded-lg p-6 hover:bg-bg-raised hover:shadow-sm transition-all cursor-pointer">
           {/* Top row: author + badge */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
