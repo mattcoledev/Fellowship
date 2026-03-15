@@ -12,7 +12,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  ShieldCheck,
 } from 'lucide-react'
 import { useState } from 'react'
 import { signOut } from '@/lib/auth-actions'
@@ -20,6 +21,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell'
 
 interface SidebarProps {
   username?: string
+  isAdmin?: boolean
 }
 
 const navItems = [
@@ -29,7 +31,7 @@ const navItems = [
   { href: '/forum', label: 'The Roundtable', icon: MessageCircle },
 ]
 
-export function Sidebar({ username }: SidebarProps) {
+export function Sidebar({ username, isAdmin }: SidebarProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -132,6 +134,21 @@ export function Sidebar({ username }: SidebarProps) {
 
         {/* Bottom items */}
         <div className="p-4 space-y-1">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                pathname.startsWith('/admin')
+                  ? "bg-accent-subtle text-accent-blue"
+                  : "text-text-secondary hover:text-text-primary hover:bg-bg-raised"
+              )}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Admin
+            </Link>
+          )}
           <Link
             href="/settings"
             onClick={() => setMobileOpen(false)}

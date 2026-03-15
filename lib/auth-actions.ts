@@ -18,19 +18,31 @@ export async function resolveUsernameToEmail(username: string): Promise<string |
 }
 
 export async function signUp(formData: FormData) {
-  const supabase = await createClient()
-  
-  const email = formData.get('email') as string
+  const email = (formData.get('email') as string).toLowerCase().trim()
   const password = formData.get('password') as string
   const username = formData.get('username') as string
   const displayName = formData.get('displayName') as string || username
 
-  const { error } = await supabase.auth.signUp({
+  // Check that this email has a pending invite
+  const { data: invite } = await supabaseAdmin
+    .from('invites')
+    .select('id')
+    .eq('email', email)
+    .eq('status', 'pending')
+    .single()
+
+  if (!invite) {
+    return { error: 'Fellowship is invite-only. This email has not been invited.' }
+  }
+
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || 
-        `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/room`,
+      emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
+        `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/home`,
       data: {
         username,
         display_name: displayName,
@@ -42,12 +54,26 @@ export async function signUp(formData: FormData) {
     return { error: error.message }
   }
 
+  // Mark invite accepted and activate the member's profile
+  if (data.user) {
+    await Promise.all([
+      supabaseAdmin
+        .from('invites')
+        .update({ status: 'accepted', accepted_at: new Date().toISOString() })
+        .eq('id', invite.id),
+      supabaseAdmin
+        .from('profiles')
+        .update({ member_status: 'active' })
+        .eq('id', data.user.id),
+    ])
+  }
+
   redirect('/auth/sign-up-success')
 }
 
 export async function signIn(formData: FormData) {
   const supabase = await createClient()
-  
+
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
@@ -60,19 +86,19 @@ export async function signIn(formData: FormData) {
     return { error: error.message }
   }
 
-  redirect('/room')
+  redirect('/home')
 }
 
 export async function signInWithMagicLink(formData: FormData) {
   const supabase = await createClient()
-  
+
   const email = formData.get('email') as string
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || 
-        `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/room`,
+      emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
+        `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/home`,
     },
   })
 
@@ -90,7 +116,7 @@ export async function sendPasswordReset(identifier: string) {
   if (!email.includes('@')) {
     const resolved = await resolveUsernameToEmail(email)
     if (resolved) email = resolved
-    // If username not found, we still proceed silently (don't leak account existence)
+    // If username not found, proceed silently (don't leak account existence)
   }
 
   await supabase.auth.resetPasswordForEmail(email, {
@@ -104,7 +130,7 @@ export async function sendPasswordReset(identifier: string) {
 export async function signOut() {
   const supabase = await createClient()
   await supabase.auth.signOut()
-  redirect('/enter')
+  redirect('/login')
 }
 
 export async function getUser() {
@@ -116,7 +142,7 @@ export async function getUser() {
 export async function getProfile() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) return null
 
   const { data: profile } = await supabase

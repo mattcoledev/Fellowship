@@ -2,78 +2,62 @@ import { updateSession } from '@/lib/supabase/proxy'
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-export async function middleware(request: NextRequest) {
-  // Site gate - check if enabled via SITE_PASSWORD env var
-  const sitePassword = process.env.SITE_PASSWORD
-  const siteGateEnabled = !!sitePassword
-  
-  if (siteGateEnabled) {
-    const siteUnlocked = request.cookies.get('site-unlocked')?.value === 'true'
-    const isEnterPage = request.nextUrl.pathname === '/enter'
-    const isVerifyGateApi = request.nextUrl.pathname === '/api/verify-gate'
-    
-    // If site is locked and not on enter page or verify-gate API, redirect to enter
-    if (!siteUnlocked && !isEnterPage && !isVerifyGateApi) {
-      return NextResponse.redirect(new URL('/enter', request.url))
+const PROTECTED_PATHS = ['/home', '/room', '/common', '/forum', '/settings', '/author', '/admin', '/notifications']
+const AUTH_PATHS = ['/login', '/signup']
+
+function createSupabaseClient(request: NextRequest) {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll() {},
+      },
     }
-  }
-
-  // Update the Supabase session
-  const response = await updateSession(request)
-  
-  // Check if user is authenticated for protected routes
-  const protectedPaths = ['/room', '/common', '/settings', '/author']
-  const isProtectedPath = protectedPaths.some(path => 
-    request.nextUrl.pathname.startsWith(path)
   )
+}
 
-  if (isProtectedPath) {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll() {},
-        },
-      }
-    )
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
 
+  const isProtected = PROTECTED_PATHS.some(p => pathname.startsWith(p))
+  const isAuthPath = AUTH_PATHS.some(p => pathname === p)
+
+  // Update Supabase session cookies
+  const response = await updateSession(request)
+
+  if (isProtected) {
+    const supabase = createSupabaseClient(request)
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      const redirectUrl = new URL('/login', request.url)
-      return NextResponse.redirect(redirectUrl)
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    // Check membership status
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('member_status, is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.member_status !== 'active') {
+      return NextResponse.redirect(new URL('/access-denied', request.url))
+    }
+
+    // Admin-only routes
+    if (pathname.startsWith('/admin') && !profile.is_admin) {
+      return NextResponse.redirect(new URL('/home', request.url))
     }
   }
 
-  // Redirect authenticated users away from auth pages (but not /enter)
-  const authPaths = ['/login', '/signup']
-  const isAuthPath = authPaths.some(path => 
-    request.nextUrl.pathname === path
-  )
-
   if (isAuthPath) {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll() {},
-        },
-      }
-    )
-
+    const supabase = createSupabaseClient(request)
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
-      const redirectUrl = new URL('/room', request.url)
-      return NextResponse.redirect(redirectUrl)
+      return NextResponse.redirect(new URL('/home', request.url))
     }
   }
 
