@@ -656,3 +656,14 @@ export async function getActivityFeed(limit = 15): Promise<ActivityItem[]> {
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, limit)
 }
+
+// Members
+export async function getActiveMembers() {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, username, display_name, bio, avatar_url, created_at')
+    .eq('member_status', 'active')
+    .order('display_name', { ascending: true, nullsFirst: false })
+  return data ?? []
+}

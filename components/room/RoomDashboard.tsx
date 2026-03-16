@@ -37,7 +37,10 @@ export function RoomDashboard({ posts }: RoomDashboardProps) {
     <div className="max-w-[1200px] mx-auto px-6 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <h1 className="font-serif text-2xl text-text-primary">Your Room</h1>
+        <div>
+          <h1 className="font-serif text-2xl text-text-primary">Your Room</h1>
+          <p className="font-sans text-sm text-text-muted mt-0.5">Your drafts and published writing.</p>
+        </div>
         <div className="flex items-center gap-3">
           <NotificationBell />
           <Button

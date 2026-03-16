@@ -2,7 +2,7 @@ import { updateSession } from '@/lib/supabase/proxy'
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-const PROTECTED_PATHS = ['/home', '/room', '/common', '/forum', '/settings', '/author', '/admin', '/notifications']
+const PROTECTED_PATHS = ['/home', '/room', '/common', '/forum', '/settings', '/author', '/admin', '/notifications', '/members']
 const AUTH_PATHS = ['/login', '/signup']
 
 function createSupabaseClient(request: NextRequest) {

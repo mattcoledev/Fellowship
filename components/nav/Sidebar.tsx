@@ -8,6 +8,7 @@ import {
   PenLine,
   Users,
   MessageCircle,
+  Contact,
   User,
   Settings,
   LogOut,
@@ -29,6 +30,7 @@ const navItems = [
   { href: '/room', label: 'Your Room', icon: PenLine },
   { href: '/common', label: 'The Common Room', icon: Users },
   { href: '/forum', label: 'The Roundtable', icon: MessageCircle },
+  { href: '/members', label: 'Members', icon: Contact },
 ]
 
 export function Sidebar({ username, isAdmin }: SidebarProps) {
