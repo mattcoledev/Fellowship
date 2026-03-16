@@ -25,7 +25,7 @@ export default async function AppLayout({
     <div className="min-h-screen bg-bg-base">
       <Sidebar username={username} isAdmin={isAdmin} />
       {/* Main content area */}
-      <main className="lg:pl-60 pt-14 lg:pt-0">
+      <main className="lg:pl-60 pt-14 lg:pt-0 pb-16 lg:pb-0">
         <div className="min-h-screen">
           {children}
         </div>

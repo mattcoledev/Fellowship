@@ -42,7 +42,9 @@ export function RoomDashboard({ posts }: RoomDashboardProps) {
           <p className="font-sans text-sm text-text-muted mt-0.5">Your drafts and published writing.</p>
         </div>
         <div className="flex items-center gap-3">
-          <NotificationBell />
+          <div className="hidden lg:block">
+            <NotificationBell />
+          </div>
           <Button
             asChild
             className="bg-accent-blue text-white hover:bg-accent-dim rounded-md font-sans font-medium"
