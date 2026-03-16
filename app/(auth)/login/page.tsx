@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -90,7 +91,17 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-bg-base noise-bg flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-bg-surface border border-border rounded-xl p-8">
+      <div className="w-full max-w-sm bg-bg-surface border border-border rounded-xl overflow-hidden">
+        <div className="w-full aspect-video relative">
+          <Image
+            src="/images/fellowship-hero.jpg"
+            alt="The Fellowship"
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+        <div className="p-8">
         <h1 className="font-serif text-2xl text-text-primary">
           Welcome back.
         </h1>
@@ -174,6 +185,7 @@ export default function LoginPage() {
             Sign up
           </Link>
         </p>
+        </div>
       </div>
     </div>
   )
