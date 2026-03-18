@@ -15,6 +15,7 @@ interface ReplyItemProps {
   reply: Reply & { profiles: Profile }
   onReply: (username: string, replyId: string | null) => void
   isNested?: boolean
+  replyingTo?: string
   currentUserId: string | null
   likeCount: number
   userLiked: boolean
@@ -25,7 +26,7 @@ function formatRelativeDate(dateString: string) {
   return formatDistanceToNow(new Date(dateString), { addSuffix: true })
 }
 
-function ReplyItem({ reply, onReply, isNested = false, currentUserId, likeCount, userLiked, isAdmin }: ReplyItemProps) {
+function ReplyItem({ reply, onReply, isNested = false, replyingTo, currentUserId, likeCount, userLiked, isAdmin }: ReplyItemProps) {
   const router = useRouter()
   const author = reply.profiles
   const isOwner = currentUserId === reply.user_id
@@ -71,7 +72,10 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId, likeCount,
   if (isDeleted) return null
 
   return (
-    <div className={isNested ? 'ml-8' : ''}>
+    <div className={isNested ? 'ml-4 pl-4 border-l-2 border-border' : ''}>
+      {replyingTo && (
+        <p className="font-sans text-xs text-text-muted mb-1.5">Replying to {replyingTo}</p>
+      )}
       <div className="flex gap-3">
         <Link href={`/author/${author?.username}`}>
           <Avatar url={author?.avatar_url} name={author?.display_name || author?.username} size={isNested ? 'sm' : 'md'} />
@@ -132,7 +136,7 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId, likeCount,
                 />
                 {currentUserId && (
                   <button
-                    onClick={() => onReply(author?.username || '', reply.id)}
+                    onClick={() => onReply(author?.display_name || author?.username || '', reply.id)}
                     className="font-sans text-xs text-text-muted hover:text-text-primary transition-colors"
                   >
                     Reply
@@ -175,6 +179,10 @@ interface ReplyListProps {
 export function ReplyList({ replies, onReply, currentUserId, likesData, isAdmin }: ReplyListProps) {
   const topLevelReplies = replies.filter(r => !r.parent_id)
 
+  const authorNameMap = Object.fromEntries(
+    replies.map(r => [r.id, r.profiles?.display_name || r.profiles?.username || 'Someone'])
+  )
+
   function getDescendants(parentId: string): (Reply & { profiles: Profile })[] {
     const children = replies.filter(r => r.parent_id === parentId)
     return children.flatMap(child => [child, ...getDescendants(child.id)])
@@ -188,7 +196,7 @@ export function ReplyList({ replies, onReply, currentUserId, likesData, isAdmin 
 
         return (
           <div key={reply.id}>
-            {index > 0 && <div className="border-t border-border my-4" />}
+            {index > 0 && <div className="border-t border-border my-6" />}
             <ReplyItem
               reply={reply}
               onReply={onReply}
@@ -200,11 +208,12 @@ export function ReplyList({ replies, onReply, currentUserId, likesData, isAdmin 
             {descendants.map((child) => {
               const childLike = likesData[child.id] || { count: 0, liked: false }
               return (
-                <div key={child.id} className="mt-3">
+                <div key={child.id} className="mt-4">
                   <ReplyItem
                     reply={child}
                     onReply={onReply}
                     isNested
+                    replyingTo={child.parent_id ? authorNameMap[child.parent_id] : undefined}
                     currentUserId={currentUserId}
                     likeCount={childLike.count}
                     userLiked={childLike.liked}
