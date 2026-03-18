@@ -34,6 +34,7 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId, likeCount,
   const [displayContent, setDisplayContent] = useState(reply.content)
   const [wasEdited, setWasEdited] = useState(reply.updated_at !== reply.created_at)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDeleted, setIsDeleted] = useState(false)
 
   const handleSaveEdit = async () => {
     if (!editContent.trim()) return
@@ -60,11 +61,14 @@ function ReplyItem({ reply, onReply, isNested = false, currentUserId, likeCount,
     if (!confirm('Delete this reply?')) return
     try {
       await deleteReply(reply.id)
+      setIsDeleted(true)
       router.refresh()
     } catch (error) {
       console.error('Failed to delete reply:', error)
     }
   }
+
+  if (isDeleted) return null
 
   return (
     <div className={isNested ? 'ml-8' : ''}>
@@ -170,12 +174,16 @@ interface ReplyListProps {
 
 export function ReplyList({ replies, onReply, currentUserId, likesData, isAdmin }: ReplyListProps) {
   const topLevelReplies = replies.filter(r => !r.parent_id)
-  const nestedReplies = replies.filter(r => r.parent_id)
+
+  function getDescendants(parentId: string): (Reply & { profiles: Profile })[] {
+    const children = replies.filter(r => r.parent_id === parentId)
+    return children.flatMap(child => [child, ...getDescendants(child.id)])
+  }
 
   return (
     <div className="space-y-0">
       {topLevelReplies.map((reply, index) => {
-        const children = nestedReplies.filter(r => r.parent_id === reply.id)
+        const descendants = getDescendants(reply.id)
         const like = likesData[reply.id] || { count: 0, liked: false }
 
         return (
@@ -189,7 +197,7 @@ export function ReplyList({ replies, onReply, currentUserId, likesData, isAdmin 
               userLiked={like.liked}
               isAdmin={isAdmin}
             />
-            {children.map((child) => {
+            {descendants.map((child) => {
               const childLike = likesData[child.id] || { count: 0, liked: false }
               return (
                 <div key={child.id} className="mt-3">
