@@ -1,26 +1,40 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    @media (prefers-color-scheme: light) {
-      .background { fill: black; }
-      .foreground { fill: white; }
-    }
-    @media (prefers-color-scheme: dark) {
-      .background { fill: white; }
-      .foreground { fill: black; }
-    }
-  </style>
-  <g clip-path="url(#clip0_7960_43945)">
-    <rect class="background" width="180" height="180" rx="37" />
-    <g style="transform: scale(95%); transform-origin: center">
-      <path class="foreground"
-        d="M101.141 53H136.632C151.023 53 162.689 64.6662 162.689 79.0573V112.904H148.112V79.0573C148.112 78.7105 148.098 78.3662 148.072 78.0251L112.581 112.898C112.701 112.902 112.821 112.904 112.941 112.904H148.112V126.672H112.941C98.5504 126.672 86.5638 114.891 86.5638 100.5V66.7434H101.141V100.5C101.141 101.15 101.191 101.792 101.289 102.422L137.56 66.7816C137.255 66.7563 136.945 66.7434 136.632 66.7434H101.141V53Z" />
-      <path class="foreground"
-        d="M65.2926 124.136L14 66.7372H34.6355L64.7495 100.436V66.7372H80.1365V118.47C80.1365 126.278 70.4953 129.958 65.2926 124.136Z" />
-    </g>
-  </g>
-  <defs>
-    <clipPath id="clip0_7960_43945">
-      <rect width="180" height="180" fill="white" />
-    </clipPath>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="90" fill="#0F172A"/>
+
+  <!-- Hat body -->
+  <polygon points="256,28 148,228 364,228" fill="#6B5744"/>
+  <!-- Hat highlight (left face) -->
+  <polygon points="256,28 148,228 220,228" fill="#7D6854" opacity="0.5"/>
+  <!-- Hat brim -->
+  <rect x="132" y="218" width="248" height="34" rx="17" fill="#3D2A18"/>
+
+  <!-- Face -->
+  <ellipse cx="256" cy="300" rx="70" ry="63" fill="#D4956A"/>
+  <!-- Face shadow -->
+  <ellipse cx="256" cy="322" rx="58" ry="42" fill="#B87040" opacity="0.2"/>
+
+  <!-- Bushy eyebrows -->
+  <path d="M192 271 Q214 257 245 265" stroke="#8C7555" stroke-width="11" fill="none" stroke-linecap="round"/>
+  <path d="M267 265 Q298 257 320 271" stroke="#8C7555" stroke-width="11" fill="none" stroke-linecap="round"/>
+
+  <!-- Eyes -->
+  <circle cx="220" cy="283" r="11" fill="#1A0E06"/>
+  <circle cx="292" cy="283" r="11" fill="#1A0E06"/>
+  <circle cx="223" cy="280" r="3.5" fill="white" opacity="0.85"/>
+  <circle cx="295" cy="280" r="3.5" fill="white" opacity="0.85"/>
+
+  <!-- Nose -->
+  <ellipse cx="256" cy="303" rx="11" ry="15" fill="#BD7248"/>
+
+  <!-- Mustache -->
+  <path d="M214 324 Q235 315 256 319 Q277 315 298 324" stroke="#D0C5A8" stroke-width="8" fill="none" stroke-linecap="round"/>
+
+  <!-- Beard main -->
+  <path d="M186 342 Q150 397 157 454 Q173 502 256 510 Q339 502 355 454 Q362 397 326 342 Q300 330 256 334 Q212 330 186 342Z" fill="#E5E2D8"/>
+
+  <!-- Beard flow lines -->
+  <path d="M256 338 Q251 393 253 448 Q254 478 256 505" stroke="#C2BEB4" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.8"/>
+  <path d="M218 345 Q201 395 208 448 Q218 478 244 496" stroke="#C2BEB4" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <path d="M294 345 Q311 395 304 448 Q294 478 268 496" stroke="#C2BEB4" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.7"/>
 </svg>
