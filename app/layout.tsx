@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
-import { Lora, Source_Serif_4, DM_Sans, JetBrains_Mono } from 'next/font/google'
+import { Lora, Merriweather, Inter, DM_Sans, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration'
 import './globals.css'
 
 const lora = Lora({ 
@@ -9,9 +10,16 @@ const lora = Lora({
   display: 'swap',
 })
 
-const sourceSerif = Source_Serif_4({ 
+const merriweather = Merriweather({
   subsets: ['latin'],
-  variable: '--font-source-serif',
+  weight: ['300', '400', '700'],
+  variable: '--font-merriweather',
+  display: 'swap',
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
   display: 'swap',
 })
 
@@ -30,6 +38,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'The Fellowship',
   description: 'A private space for writing and reading.',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Fellowship',
+  },
 }
 
 export const viewport: Viewport = {
@@ -44,11 +57,12 @@ export default function RootLayout({
   return (
     <html 
       lang="en" 
-      className={`${lora.variable} ${sourceSerif.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
+      className={`${lora.variable} ${merriweather.variable} ${inter.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-sans antialiased bg-bg-base text-text-primary">
         {children}
         <Analytics />
+        <ServiceWorkerRegistration />
       </body>
     </html>
   )
